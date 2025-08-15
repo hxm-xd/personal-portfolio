@@ -97,9 +97,6 @@ class AdminDashboardFirebase {
       console.log('Logout button not found (normal if not logged in)');
     }
 
-    // Portfolio settings forms
-    this.setupPortfolioForms();
-    
     // Setup network status monitoring
     this.setupNetworkMonitoring();
   }
@@ -311,58 +308,86 @@ class AdminDashboardFirebase {
   }
 
   setupPortfolioForms() {
+    console.log('Setting up portfolio forms...');
+    
     // Profile form
     const profileForm = document.getElementById('profile-form');
     if (profileForm) {
+      console.log('Profile form found, adding event listener');
       profileForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Profile form submitted');
         this.saveProfileInfo();
       });
+    } else {
+      console.error('Profile form not found!');
     }
 
     // Social links form
     const socialForm = document.getElementById('social-form');
     if (socialForm) {
+      console.log('Social form found, adding event listener');
       socialForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Social form submitted');
         this.saveSocialLinks();
       });
+    } else {
+      console.error('Social form not found!');
     }
 
     // Statistics form
     const statsForm = document.getElementById('stats-form');
     if (statsForm) {
+      console.log('Stats form found, adding event listener');
       statsForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Stats form submitted');
         this.saveStatistics();
       });
+    } else {
+      console.error('Stats form not found!');
     }
 
     // Contact info form
     const contactInfoForm = document.getElementById('contact-info-form');
     if (contactInfoForm) {
+      console.log('Contact info form found, adding event listener');
       contactInfoForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Contact info form submitted');
         this.saveContactInfo();
       });
+    } else {
+      console.error('Contact info form not found!');
     }
 
     // Password form
     const passwordForm = document.getElementById('password-form');
     if (passwordForm) {
+      console.log('Password form found, adding event listener');
       passwordForm.addEventListener('submit', (e) => {
         e.preventDefault();
+        console.log('Password form submitted');
         this.changePassword();
       });
+    } else {
+      console.error('Password form not found!');
     }
 
     // Profile image upload
     const profileImageInput = document.getElementById('profile-image-input');
     if (profileImageInput) {
+      console.log('Profile image input found, adding event listener');
       profileImageInput.addEventListener('change', (e) => {
+        console.log('Profile image selected:', e.target.files[0]);
         this.handleProfileImageUpload(e.target.files[0]);
       });
+    } else {
+      console.error('Profile image input not found!');
     }
+    
+    console.log('Portfolio forms setup complete');
   }
 
   async checkAuth() {
@@ -487,6 +512,11 @@ class AdminDashboardFirebase {
     
     if (loginScreen) loginScreen.style.display = 'none';
     if (dashboard) dashboard.style.display = 'block';
+    
+    // Setup portfolio forms after dashboard is shown
+    setTimeout(() => {
+      this.setupPortfolioForms();
+    }, 100);
     
     this.switchTab('overview');
   }
@@ -724,6 +754,12 @@ class AdminDashboardFirebase {
       this.renderData('contacts');
     } else if (tab === 'portfolio') {
       this.renderData('projects');
+    } else if (tab === 'portfolio-settings') {
+      // Setup portfolio forms when switching to portfolio-settings tab
+      setTimeout(() => {
+        this.setupPortfolioForms();
+        this.loadPortfolioSettings();
+      }, 100);
     }
   }
 
