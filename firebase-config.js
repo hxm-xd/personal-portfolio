@@ -26,7 +26,6 @@ const db = firebase.firestore();
 // Configure Firestore with more robust settings
 db.settings({
   cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-  experimentalForceLongPolling: true, // Force long polling for better compatibility
   merge: true
 });
 
@@ -74,5 +73,27 @@ window.auth = auth;
 window.storage = storage;
 window.testFirebaseConnection = testFirebaseConnection;
 
-// Run connection test
-testFirebaseConnection();
+// Initialize Firebase services and run connection test
+async function initializeFirebase() {
+  try {
+    console.log('Initializing Firebase services...');
+    
+    // Ensure auth is properly initialized
+    await auth.authStateReady();
+    console.log('Firebase auth initialized successfully');
+    
+    // Run connection test
+    await testFirebaseConnection();
+    
+    console.log('Firebase initialization complete');
+    
+    // Dispatch custom event to notify that Firebase is ready
+    window.dispatchEvent(new CustomEvent('firebaseReady'));
+    
+  } catch (error) {
+    console.error('Firebase initialization failed:', error);
+  }
+}
+
+// Start initialization
+initializeFirebase();

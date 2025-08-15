@@ -377,13 +377,30 @@ class AdminDashboardFirebase {
     console.log('Checking authentication...');
     
     // Wait for Firebase to be ready
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    while (typeof window.auth === 'undefined' && attempts < maxAttempts) {
-      console.log(`Waiting for Firebase auth to be ready... (attempt ${attempts + 1}/${maxAttempts})`);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      attempts++;
+    if (typeof window.auth === 'undefined') {
+      console.log('Waiting for Firebase to be ready...');
+      
+      // Listen for Firebase ready event
+      await new Promise((resolve) => {
+        const handleFirebaseReady = () => {
+          window.removeEventListener('firebaseReady', handleFirebaseReady);
+          resolve();
+        };
+        
+        // Check if Firebase is already ready
+        if (typeof window.auth !== 'undefined') {
+          resolve();
+          return;
+        }
+        
+        window.addEventListener('firebaseReady', handleFirebaseReady);
+        
+        // Fallback timeout after 10 seconds
+        setTimeout(() => {
+          window.removeEventListener('firebaseReady', handleFirebaseReady);
+          resolve();
+        }, 10000);
+      });
     }
     
     // Check if Firebase auth is available
@@ -1220,7 +1237,7 @@ function deleteItem(type, id) {
 }
 
 async function resetProfileImage() {
-  document.getElementById('current-profile-img').src = '../assets/profile.jpg';
+  document.getElementById('current-profile-img').src = '../assets/profile.svg';
   adminDashboard.data.portfolio.profileImage = null;
   await adminDashboard.saveData();
   await adminDashboard.saveToPublicPortfolio();
