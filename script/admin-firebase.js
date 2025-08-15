@@ -99,6 +99,215 @@ class AdminDashboardFirebase {
 
     // Portfolio settings forms
     this.setupPortfolioForms();
+    
+    // Setup network status monitoring
+    this.setupNetworkMonitoring();
+  }
+
+  setupNetworkMonitoring() {
+    // Update network status on page load
+    this.updateNetworkStatus();
+    
+    // Listen for online/offline events
+    window.addEventListener('online', () => {
+      console.log('Browser went online');
+      this.updateNetworkStatus();
+      this.showNotification('Connection restored!', 'success');
+      
+      // Try to reload data when connection is restored
+      if (this.user) {
+        setTimeout(() => {
+          this.loadData();
+        }, 2000); // Wait 2 seconds before retrying
+      }
+    });
+    
+    window.addEventListener('offline', () => {
+      console.log('Browser went offline');
+      this.updateNetworkStatus();
+      this.showNotification('You are now offline. Some features may be limited.', 'warning');
+    });
+    
+    // Monitor Firebase connection status
+    if (typeof db !== 'undefined') {
+      db.enableNetwork().then(() => {
+        console.log('Firebase network enabled');
+        // Test connection periodically
+        this.testFirebaseConnection();
+      }).catch(error => {
+        console.error('Firebase network error:', error);
+        this.updateNetworkStatus('firebase-error');
+      });
+    }
+  }
+
+  async testFirebaseConnection() {
+    try {
+      // Test connection every 30 seconds
+      setInterval(async () => {
+        if (navigator.onLine) {
+          try {
+            await db.collection('users').limit(1).get();
+            this.updateNetworkStatus('online');
+          } catch (error) {
+            console.warn('Firebase connection test failed:', error.message);
+            if (error.code === 'unavailable') {
+              this.updateNetworkStatus('firebase-error');
+            }
+          }
+        }
+      }, 30000); // 30 seconds
+    } catch (error) {
+      console.error('Error setting up Firebase connection test:', error);
+    }
+  }
+
+  updateNetworkStatus(status = 'auto') {
+    const networkStatus = document.getElementById('network-status');
+    const networkText = document.getElementById('network-text');
+    const networkIcon = networkStatus?.querySelector('i');
+    const retryBtn = document.getElementById('retry-connection');
+    
+    if (!networkStatus || !networkText || !networkIcon) {
+      console.warn('Network status elements not found');
+      return;
+    }
+    
+    let newStatus = status;
+    let newText = 'Online';
+    let newIcon = 'fas fa-wifi';
+    let newClass = '';
+    let showRetry = false;
+    
+    if (status === 'auto') {
+      if (!navigator.onLine) {
+        newStatus = 'offline';
+      } else {
+        newStatus = 'online';
+      }
+    }
+    
+    switch (newStatus) {
+      case 'online':
+        newText = 'Online';
+        newIcon = 'fas fa-wifi';
+        newClass = '';
+        showRetry = false;
+        break;
+      case 'offline':
+        newText = 'Offline';
+        newIcon = 'fas fa-wifi-slash';
+        newClass = 'danger';
+        showRetry = true;
+        break;
+      case 'firebase-error':
+        newText = 'Firebase Error';
+        newIcon = 'fas fa-exclamation-triangle';
+        newClass = 'warning';
+        showRetry = true;
+        break;
+      case 'slow':
+        newText = 'Slow Connection';
+        newIcon = 'fas fa-wifi';
+        newClass = 'warning';
+        showRetry = false;
+        break;
+    }
+    
+    // Update the elements
+    networkText.textContent = newText;
+    networkIcon.className = newIcon;
+    
+    // Update classes
+    networkStatus.className = `network-status ${newClass}`.trim();
+    
+    // Show/hide retry button
+    if (retryBtn) {
+      retryBtn.style.display = showRetry ? 'flex' : 'none';
+    }
+    
+    console.log(`Network status updated to: ${newStatus}`);
+  }
+
+  async retryConnection() {
+    console.log('Manual retry connection requested');
+    this.showNotification('Retrying connection...', 'info');
+    
+    try {
+      // Enable network
+      await db.enableNetwork();
+      console.log('Network enabled');
+      
+      // Test connection
+      await db.collection('users').limit(1).get();
+      console.log('Connection test successful');
+      
+      this.updateNetworkStatus('online');
+      this.showNotification('Connection restored!', 'success');
+      
+      // Reload data
+      if (this.user) {
+        await this.loadData();
+      }
+    } catch (error) {
+      console.error('Retry failed:', error);
+      this.updateNetworkStatus('firebase-error');
+      this.showNotification('Retry failed: ' + error.message, 'error');
+    }
+  }
+
+  async runDiagnostics() {
+    console.log('Running Firebase diagnostics...');
+    const diagnostics = {
+      timestamp: new Date().toISOString(),
+      browser: navigator.userAgent,
+      online: navigator.onLine,
+      firebaseConfig: {
+        projectId: db._delegate._databaseId.projectId,
+        databaseId: db._delegate._databaseId.databaseId
+      },
+      tests: {}
+    };
+
+    // Test 1: Basic connectivity
+    try {
+      await db.collection('_test').doc('diagnostic').get();
+      diagnostics.tests.basicConnectivity = { success: true, error: null };
+    } catch (error) {
+      diagnostics.tests.basicConnectivity = { success: false, error: error.message, code: error.code };
+    }
+
+    // Test 2: Network status
+    try {
+      await db.enableNetwork();
+      diagnostics.tests.networkStatus = { success: true, error: null };
+    } catch (error) {
+      diagnostics.tests.networkStatus = { success: false, error: error.message };
+    }
+
+    // Test 3: Authentication status
+    try {
+      const user = auth.currentUser;
+      diagnostics.tests.authStatus = { 
+        success: true, 
+        authenticated: !!user, 
+        userId: user?.uid || null,
+        error: null 
+      };
+    } catch (error) {
+      diagnostics.tests.authStatus = { success: false, error: error.message };
+    }
+
+    console.log('Diagnostics results:', diagnostics);
+    
+    // Show results to user
+    const results = Object.entries(diagnostics.tests)
+      .map(([test, result]) => `${test}: ${result.success ? '✅' : '❌'} ${result.error || ''}`)
+      .join('\n');
+    
+    this.showNotification(`Diagnostics complete. Check console for details.`, 'info');
+    
+    return diagnostics;
   }
 
   setupPortfolioForms() {
@@ -249,16 +458,31 @@ class AdminDashboardFirebase {
   async loadData() {
     try {
       console.log('Loading data from Firestore...');
-      console.log('Firestore region:', db._delegate._databaseId.projectId);
+      console.log('Firestore project:', db._delegate._databaseId.projectId);
       const userId = this.user.uid;
       console.log('User ID:', userId);
       
+      // Check if we're online
+      if (!navigator.onLine) {
+        console.warn('Browser is offline, will try to load cached data');
+        this.showNotification('You are offline. Loading cached data if available.', 'warning');
+        this.updateNetworkStatus('offline');
+      }
+      
       // Test basic Firestore connection first
       console.log('Testing basic Firestore connection...');
+      let connectionSuccessful = false;
+      
       try {
+        // Try to enable network first
+        await db.enableNetwork();
+        console.log('Firebase network enabled');
+        
         // Try a simple collection list instead of a specific document
         await db.collection('users').limit(1).get();
         console.log('Basic Firestore connection successful');
+        connectionSuccessful = true;
+        this.updateNetworkStatus('online');
       } catch (connectionError) {
         console.error('Basic connection failed:', connectionError);
         console.error('Connection error details:', connectionError.code, connectionError.message);
@@ -266,8 +490,23 @@ class AdminDashboardFirebase {
         // If it's a permissions error, that's actually good - it means we can connect
         if (connectionError.code === 'permission-denied') {
           console.log('Connection successful (permission denied is expected for empty collection)');
+          connectionSuccessful = true;
+          this.updateNetworkStatus('online');
+        } else if (connectionError.code === 'unavailable') {
+          console.warn('Firebase is unavailable, will try to work offline');
+          this.updateNetworkStatus('firebase-error');
+          this.showNotification('Firebase is temporarily unavailable. Working in offline mode.', 'warning');
+          
+          // Try to disable network and work offline
+          try {
+            await db.disableNetwork();
+            console.log('Firebase network disabled, working offline');
+          } catch (disableError) {
+            console.error('Failed to disable network:', disableError);
+          }
         } else {
-          throw new Error('Cannot connect to Firebase. Please check your internet connection and try again.');
+          this.updateNetworkStatus('firebase-error');
+          this.showNotification('Firebase connection error: ' + connectionError.message, 'error');
         }
       }
       
@@ -282,36 +521,68 @@ class AdminDashboardFirebase {
         console.log('User document might not exist yet, continuing...');
       }
       
-      // Load all data from Firestore
-      console.log('Loading tasks...');
-      const tasksSnapshot = await db.collection('users').doc(userId).collection('tasks').get();
-      this.data.tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Tasks loaded:', this.data.tasks.length);
+      // Load all data from Firestore with better error handling and retry mechanism
+      const loadCollectionWithRetry = async (collectionName, maxRetries = 3) => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`Loading ${collectionName} (attempt ${attempt})...`);
+            const snapshot = await db.collection('users').doc(userId).collection(collectionName).get();
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log(`${collectionName} loaded:`, data.length);
+            return data;
+          } catch (error) {
+            console.warn(`Failed to load ${collectionName} (attempt ${attempt}):`, error.message);
+            if (attempt === maxRetries) {
+              console.error(`Failed to load ${collectionName} after ${maxRetries} attempts`);
+              return [];
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      };
 
-      console.log('Loading academics...');
-      const academicsSnapshot = await db.collection('users').doc(userId).collection('academics').get();
-      this.data.academics = academicsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Academics loaded:', this.data.academics.length);
+      const loadDocumentWithRetry = async (collectionName, docName, maxRetries = 3) => {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            console.log(`Loading ${collectionName}/${docName} (attempt ${attempt})...`);
+            const doc = await db.collection('users').doc(userId).collection(collectionName).doc(docName).get();
+            const data = doc.exists ? doc.data() : {};
+            console.log(`${collectionName}/${docName} loaded`);
+            return data;
+          } catch (error) {
+            console.warn(`Failed to load ${collectionName}/${docName} (attempt ${attempt}):`, error.message);
+            if (attempt === maxRetries) {
+              console.error(`Failed to load ${collectionName}/${docName} after ${maxRetries} attempts`);
+              return {};
+            }
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      };
 
-      console.log('Loading contacts...');
-      const contactsSnapshot = await db.collection('users').doc(userId).collection('contacts').get();
-      this.data.contacts = contactsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Contacts loaded:', this.data.contacts.length);
+      // Load all collections in parallel with retry
+      const [tasks, academics, contacts, projects] = await Promise.allSettled([
+        loadCollectionWithRetry('tasks'),
+        loadCollectionWithRetry('academics'),
+        loadCollectionWithRetry('contacts'),
+        loadCollectionWithRetry('projects')
+      ]);
 
-      console.log('Loading projects...');
-      const projectsSnapshot = await db.collection('users').doc(userId).collection('projects').get();
-      this.data.projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      console.log('Projects loaded:', this.data.projects.length);
+      // Load documents in parallel with retry
+      const [settings, portfolio] = await Promise.allSettled([
+        loadDocumentWithRetry('settings', 'main'),
+        loadDocumentWithRetry('portfolio', 'main')
+      ]);
 
-      console.log('Loading settings...');
-      const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
-      this.data.settings = settingsDoc.exists ? settingsDoc.data() : {};
-      console.log('Settings loaded');
-
-      console.log('Loading portfolio...');
-      const portfolioDoc = await db.collection('users').doc(userId).collection('portfolio').doc('main').get();
-      this.data.portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
-      console.log('Portfolio loaded');
+      // Assign data with fallbacks
+      this.data.tasks = tasks.status === 'fulfilled' ? tasks.value : [];
+      this.data.academics = academics.status === 'fulfilled' ? academics.value : [];
+      this.data.contacts = contacts.status === 'fulfilled' ? contacts.value : [];
+      this.data.projects = projects.status === 'fulfilled' ? projects.value : [];
+      this.data.settings = settings.status === 'fulfilled' ? settings.value : {};
+      this.data.portfolio = portfolio.status === 'fulfilled' ? portfolio.value : {};
 
       this.renderAllData();
       this.loadPortfolioSettings();
@@ -325,8 +596,10 @@ class AdminDashboardFirebase {
       if (error.code === 'permission-denied') {
         this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
       } else if (error.code === 'unavailable') {
+        this.updateNetworkStatus('firebase-error');
         this.showNotification('Firebase is unavailable. Please check your internet connection and try refreshing the page.', 'error');
       } else if (error.message.includes('Cannot connect to Firebase')) {
+        this.updateNetworkStatus('firebase-error');
         this.showNotification(error.message, 'error');
       } else {
         this.showNotification('Error loading data: ' + error.message, 'error');

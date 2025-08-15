@@ -44,6 +44,19 @@
           <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
         </div>
         <div class="header-right">
+          <span id="network-status" class="network-status">
+            <i class="fas fa-wifi"></i>
+            <span id="network-text">Online</span>
+          </span>
+          <button
+            id="retry-connection"
+            class="retry-btn"
+            style="display: none"
+            onclick="adminDashboard.retryConnection()"
+          >
+            <i class="fas fa-sync-alt"></i>
+            Retry
+          </button>
           <span id="security-status" class="security-status">
             <i class="fas fa-shield-alt"></i>
             <span id="security-text">Secure</span>
@@ -575,6 +588,33 @@
                 <i class="fas fa-trash"></i>
                 Clear All Data
               </button>
+            </div>
+            <div class="settings-card">
+              <h3><i class="fas fa-tools"></i> System Diagnostics</h3>
+              <button
+                onclick="adminDashboard.runDiagnostics()"
+                class="btn-secondary"
+              >
+                <i class="fas fa-stethoscope"></i>
+                Run Diagnostics
+              </button>
+              <button
+                onclick="adminDashboard.retryConnection()"
+                class="btn-secondary"
+              >
+                <i class="fas fa-sync-alt"></i>
+                Retry Connection
+              </button>
+              <p
+                style="
+                  margin-top: 1rem;
+                  font-size: 0.9rem;
+                  color: var(--text-secondary);
+                "
+              >
+                Use these tools to troubleshoot connection issues and verify
+                system status.
+              </p>
             </div>
           </div>
         </div>
