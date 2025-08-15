@@ -51,17 +51,22 @@ async function loadPortfolioSettingsFromFirebase() {
     const portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
 
     // Update profile information
-    if (portfolio.name) {
-      document.querySelector('.profile-info h1').textContent = portfolio.name;
-    }
-    if (portfolio.title) {
-      document.querySelector('.profile-info .title').textContent = portfolio.title;
-    }
-    if (portfolio.subtitle) {
-      document.querySelector('.profile-info .subtitle').textContent = portfolio.subtitle;
-    }
-    if (portfolio.about) {
-      document.querySelector('.about-text p:first-child').textContent = portfolio.about;
+    if (portfolio.profile) {
+      if (portfolio.profile.name) {
+        document.querySelector('.profile-info h1').textContent = portfolio.profile.name;
+      }
+      if (portfolio.profile.title) {
+        document.querySelector('.profile-info .title').textContent = portfolio.profile.title;
+      }
+      if (portfolio.profile.subtitle) {
+        document.querySelector('.profile-info .subtitle').textContent = portfolio.profile.subtitle;
+      }
+      if (portfolio.profile.about) {
+        const aboutText = document.querySelector('.about-text p:first-child');
+        if (aboutText) {
+          aboutText.textContent = portfolio.profile.about;
+        }
+      }
     }
 
     // Update social links
