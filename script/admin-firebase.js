@@ -129,8 +129,8 @@ class AdminDashboardFirebase {
     });
     
     // Monitor Firebase connection status
-    if (typeof db !== 'undefined') {
-      db.enableNetwork().then(() => {
+    if (typeof window.db !== 'undefined') {
+      window.db.enableNetwork().then(() => {
         console.log('Firebase network enabled');
         // Test connection periodically
         this.testFirebaseConnection();
@@ -147,7 +147,7 @@ class AdminDashboardFirebase {
       setInterval(async () => {
         if (navigator.onLine) {
           try {
-            await db.collection('users').limit(1).get();
+            await window.db.collection('users').limit(1).get();
             this.updateNetworkStatus('online');
           } catch (error) {
             console.warn('Firebase connection test failed:', error.message);
@@ -235,11 +235,11 @@ class AdminDashboardFirebase {
     
     try {
       // Enable network
-      await db.enableNetwork();
+      await window.db.enableNetwork();
       console.log('Network enabled');
       
       // Test connection
-      await db.collection('users').limit(1).get();
+      await window.db.collection('users').limit(1).get();
       console.log('Connection test successful');
       
       this.updateNetworkStatus('online');
@@ -263,15 +263,15 @@ class AdminDashboardFirebase {
       browser: navigator.userAgent,
       online: navigator.onLine,
       firebaseConfig: {
-        projectId: db._delegate._databaseId.projectId,
-        databaseId: db._delegate._databaseId.databaseId
+        projectId: window.db._delegate._databaseId.projectId,
+        databaseId: window.db._delegate._databaseId.databaseId
       },
       tests: {}
     };
 
     // Test 1: Basic connectivity
     try {
-      await db.collection('_test').doc('diagnostic').get();
+      await window.db.collection('_test').doc('diagnostic').get();
       diagnostics.tests.basicConnectivity = { success: true, error: null };
     } catch (error) {
       diagnostics.tests.basicConnectivity = { success: false, error: error.message, code: error.code };
@@ -279,7 +279,7 @@ class AdminDashboardFirebase {
 
     // Test 2: Network status
     try {
-      await db.enableNetwork();
+      await window.db.enableNetwork();
       diagnostics.tests.networkStatus = { success: true, error: null };
     } catch (error) {
       diagnostics.tests.networkStatus = { success: false, error: error.message };
@@ -287,7 +287,7 @@ class AdminDashboardFirebase {
 
     // Test 3: Authentication status
     try {
-      const user = auth.currentUser;
+      const user = window.auth.currentUser;
       diagnostics.tests.authStatus = { 
         success: true, 
         authenticated: !!user, 
@@ -369,7 +369,7 @@ class AdminDashboardFirebase {
     console.log('Checking authentication...');
     
     // Check if Firebase auth is available
-    if (typeof auth === 'undefined') {
+    if (typeof window.auth === 'undefined') {
       console.error('Firebase auth is not available!');
       this.showNotification('Firebase not initialized properly', 'error');
       return;
@@ -381,7 +381,7 @@ class AdminDashboardFirebase {
       this.showNotification('You appear to be offline. Please check your internet connection.', 'warning');
     }
     
-    auth.onAuthStateChanged(async (user) => {
+    window.auth.onAuthStateChanged(async (user) => {
       console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       if (user) {
         this.user = user;
@@ -410,7 +410,7 @@ class AdminDashboardFirebase {
       button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
 
       console.log('Calling Firebase auth.signInWithEmailAndPassword...');
-      await auth.signInWithEmailAndPassword(email, password);
+      await window.auth.signInWithEmailAndPassword(email, password);
       console.log('Login successful!');
       
       errorEl.style.display = 'none';
@@ -428,7 +428,7 @@ class AdminDashboardFirebase {
 
   async logout() {
     try {
-      await auth.signOut();
+      await window.auth.signOut();
       this.showNotification('Logged out successfully', 'info');
     } catch (error) {
       this.showNotification('Logout error: ' + error.message, 'error');
@@ -458,7 +458,7 @@ class AdminDashboardFirebase {
   async loadData() {
     try {
       console.log('Loading data from Firestore...');
-      console.log('Firestore project:', db._delegate._databaseId.projectId);
+      console.log('Firestore project:', window.db._delegate._databaseId.projectId);
       const userId = this.user.uid;
       console.log('User ID:', userId);
       
@@ -475,11 +475,11 @@ class AdminDashboardFirebase {
       
       try {
         // Try to enable network first
-        await db.enableNetwork();
+        await window.db.enableNetwork();
         console.log('Firebase network enabled');
         
         // Try a simple collection list instead of a specific document
-        await db.collection('users').limit(1).get();
+        await window.db.collection('users').limit(1).get();
         console.log('Basic Firestore connection successful');
         connectionSuccessful = true;
         this.updateNetworkStatus('online');
@@ -499,7 +499,7 @@ class AdminDashboardFirebase {
           
           // Try to disable network and work offline
           try {
-            await db.disableNetwork();
+            await window.db.disableNetwork();
             console.log('Firebase network disabled, working offline');
           } catch (disableError) {
             console.error('Failed to disable network:', disableError);
@@ -513,7 +513,7 @@ class AdminDashboardFirebase {
       // Test user-specific connection
       console.log('Testing user-specific connection...');
       try {
-        await db.collection('users').doc(userId).get();
+        await window.db.collection('users').doc(userId).get();
         console.log('User-specific connection successful');
       } catch (userError) {
         console.error('User connection failed:', userError);
@@ -526,7 +526,7 @@ class AdminDashboardFirebase {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             console.log(`Loading ${collectionName} (attempt ${attempt})...`);
-            const snapshot = await db.collection('users').doc(userId).collection(collectionName).get();
+            const snapshot = await window.db.collection('users').doc(userId).collection(collectionName).get();
             const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             console.log(`${collectionName} loaded:`, data.length);
             return data;
@@ -546,7 +546,7 @@ class AdminDashboardFirebase {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
             console.log(`Loading ${collectionName}/${docName} (attempt ${attempt})...`);
-            const doc = await db.collection('users').doc(userId).collection(collectionName).doc(docName).get();
+            const doc = await window.db.collection('users').doc(userId).collection(collectionName).doc(docName).get();
             const data = doc.exists ? doc.data() : {};
             console.log(`${collectionName}/${docName} loaded`);
             return data;
@@ -614,37 +614,37 @@ class AdminDashboardFirebase {
       console.log('User ID:', userId);
       
       // Save all data to Firestore
-      const batch = db.batch();
+      const batch = window.db.batch();
 
       // Save tasks
       this.data.tasks.forEach(task => {
-        const docRef = db.collection('users').doc(userId).collection('tasks').doc(task.id);
+        const docRef = window.db.collection('users').doc(userId).collection('tasks').doc(task.id);
         batch.set(docRef, task);
       });
 
       // Save academics
       this.data.academics.forEach(academic => {
-        const docRef = db.collection('users').doc(userId).collection('academics').doc(academic.id);
+        const docRef = window.db.collection('users').doc(userId).collection('academics').doc(academic.id);
         batch.set(docRef, academic);
       });
 
       // Save contacts
       this.data.contacts.forEach(contact => {
-        const docRef = db.collection('users').doc(userId).collection('contacts').doc(contact.id);
+        const docRef = window.db.collection('users').doc(userId).collection('contacts').doc(contact.id);
         batch.set(docRef, contact);
       });
 
       // Save projects
       this.data.projects.forEach(project => {
-        const docRef = db.collection('users').doc(userId).collection('projects').doc(project.id);
+        const docRef = window.db.collection('users').doc(userId).collection('projects').doc(project.id);
         batch.set(docRef, project);
       });
 
       // Save settings
-      batch.set(db.collection('users').doc(userId).collection('settings').doc('main'), this.data.settings);
+      batch.set(window.db.collection('users').doc(userId).collection('settings').doc('main'), this.data.settings);
 
       // Save portfolio
-      batch.set(db.collection('users').doc(userId).collection('portfolio').doc('main'), this.data.portfolio);
+      batch.set(window.db.collection('users').doc(userId).collection('portfolio').doc('main'), this.data.portfolio);
 
       console.log('Committing batch write...');
       await batch.commit();
@@ -1046,7 +1046,7 @@ class AdminDashboardFirebase {
   async saveToPublicPortfolio() {
     try {
       // Save portfolio settings to public location
-      await db.collection('public').doc('portfolio').set({
+      await window.db.collection('public').doc('portfolio').set({
         profile: this.data.portfolio.profile || {},
         social: this.data.portfolio.social || {},
         stats: this.data.portfolio.stats || {},
@@ -1056,7 +1056,7 @@ class AdminDashboardFirebase {
       }, { merge: true });
       
       // Save projects to public location
-      const projectsRef = db.collection('public').doc('portfolio').collection('projects');
+      const projectsRef = window.db.collection('public').doc('portfolio').collection('projects');
       
       // Clear existing projects
       const existingProjects = await projectsRef.get();
@@ -1081,7 +1081,7 @@ class AdminDashboardFirebase {
     
     try {
       const userId = this.user.uid;
-      const storageRef = storage.ref(`profile-images/${userId}/${file.name}`);
+      const storageRef = window.storage.ref(`profile-images/${userId}/${file.name}`);
       const snapshot = await storageRef.put(file);
       const downloadURL = await snapshot.ref.getDownloadURL();
       
