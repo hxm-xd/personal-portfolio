@@ -47,8 +47,10 @@ async function loadProjectsFromFirebase() {
 // Load portfolio settings from Firebase
 async function loadPortfolioSettingsFromFirebase() {
   try {
+    console.log('Loading portfolio settings from Firebase...');
     const portfolioDoc = await db.collection('public').doc('portfolio').get();
     const portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
+    console.log('Portfolio data loaded:', portfolio);
 
     // Update profile information
     if (portfolio.profile) {
@@ -228,14 +230,27 @@ function updateSkills(skills) {
 
   Object.keys(skillCategoryMap).forEach(categoryKey => {
     const categoryTitle = skillCategoryMap[categoryKey];
-    const container = document.querySelector(`.skill-category:has(h3:contains("${categoryTitle}")) .skill-items`);
-    if (container && skills[categoryKey]) {
-      container.innerHTML = skills[categoryKey].map(skill => `
-        <div class="skill-item">
-          <span class="skill-name">${skill.name}</span>
-          <span class="skill-level">${skill.level}</span>
-        </div>
-      `).join('');
+    // Find the skill category by looking for the h3 with the specific title
+    const skillCategories = document.querySelectorAll('.skill-category');
+    let targetCategory = null;
+    
+    skillCategories.forEach(category => {
+      const h3 = category.querySelector('h3');
+      if (h3 && h3.textContent === categoryTitle) {
+        targetCategory = category;
+      }
+    });
+    
+    if (targetCategory && skills[categoryKey]) {
+      const container = targetCategory.querySelector('.skill-items');
+      if (container) {
+        container.innerHTML = skills[categoryKey].map(skill => `
+          <div class="skill-item">
+            <span class="skill-name">${skill.name}</span>
+            <span class="skill-level">${skill.level}</span>
+          </div>
+        `).join('');
+      }
     }
   });
 }

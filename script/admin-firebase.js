@@ -1122,6 +1122,9 @@ class AdminDashboardFirebase {
 
   async saveToPublicPortfolio() {
     try {
+      console.log('Saving to public portfolio...');
+      console.log('Portfolio data to save:', this.data.portfolio);
+      
       // Save portfolio settings to public location
       await window.db.collection('public').doc('portfolio').set({
         profile: this.data.portfolio.profile || {},
