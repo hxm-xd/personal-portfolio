@@ -130,14 +130,9 @@ class AdminDashboardFirebase {
     
     // Monitor Firebase connection status
     if (typeof window.db !== 'undefined') {
-      window.db.enableNetwork().then(() => {
-        console.log('Firebase network enabled');
-        // Test connection periodically
-        this.testFirebaseConnection();
-      }).catch(error => {
-        console.error('Firebase network error:', error);
-        this.updateNetworkStatus('firebase-error');
-      });
+      console.log('Firebase db available, setting up connection monitoring');
+      // Test connection periodically
+      this.testFirebaseConnection();
     } else {
       console.warn('Firebase db not available yet, will retry later');
       // Retry after a delay
@@ -242,10 +237,6 @@ class AdminDashboardFirebase {
     this.showNotification('Retrying connection...', 'info');
     
     try {
-      // Enable network
-      await window.db.enableNetwork();
-      console.log('Network enabled');
-      
       // Test connection
       await window.db.collection('users').limit(1).get();
       console.log('Connection test successful');
@@ -287,7 +278,8 @@ class AdminDashboardFirebase {
 
     // Test 2: Network status
     try {
-      await window.db.enableNetwork();
+      // Simple connectivity test instead of enableNetwork
+      await window.db.collection('users').limit(1).get();
       diagnostics.tests.networkStatus = { success: true, error: null };
     } catch (error) {
       diagnostics.tests.networkStatus = { success: false, error: error.message };
@@ -526,10 +518,6 @@ class AdminDashboardFirebase {
       let connectionSuccessful = false;
       
       try {
-        // Try to enable network first
-        await window.db.enableNetwork();
-        console.log('Firebase network enabled');
-        
         // Try a simple collection list instead of a specific document
         await window.db.collection('users').limit(1).get();
         console.log('Basic Firestore connection successful');
@@ -545,17 +533,9 @@ class AdminDashboardFirebase {
           connectionSuccessful = true;
           this.updateNetworkStatus('online');
         } else if (connectionError.code === 'unavailable') {
-          console.warn('Firebase is unavailable, will try to work offline');
+          console.warn('Firebase is unavailable');
           this.updateNetworkStatus('firebase-error');
-          this.showNotification('Firebase is temporarily unavailable. Working in offline mode.', 'warning');
-          
-          // Try to disable network and work offline
-          try {
-            await window.db.disableNetwork();
-            console.log('Firebase network disabled, working offline');
-          } catch (disableError) {
-            console.error('Failed to disable network:', disableError);
-          }
+          this.showNotification('Firebase is temporarily unavailable.', 'warning');
         } else {
           this.updateNetworkStatus('firebase-error');
           this.showNotification('Firebase connection error: ' + connectionError.message, 'error');

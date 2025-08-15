@@ -25,13 +25,6 @@ console.log('Firebase initialized with project:', firebaseConfig.projectId);
 
 // Initialize Firebase services
 const db = firebase.firestore();
-
-// Configure Firestore with more robust settings
-db.settings({
-  cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
-  merge: true
-});
-
 const auth = firebase.auth();
 const storage = firebase.storage();
 
@@ -53,17 +46,10 @@ async function testFirebaseConnection() {
       return true;
     }
     
-    // If it's an unavailable error, try to enable network
+    // If it's an unavailable error, log it but don't try to enable network
     if (error.code === 'unavailable') {
-      console.log('Firebase unavailable, attempting to enable network...');
-      try {
-        await db.enableNetwork();
-        console.log('Firebase network enabled');
-        return true;
-      } catch (networkError) {
-        console.error('Failed to enable Firebase network:', networkError);
-        return false;
-      }
+      console.log('Firebase unavailable, but continuing...');
+      return false;
     }
     
     return false;
