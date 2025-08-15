@@ -166,6 +166,12 @@ class AdminDashboardFirebase {
       return;
     }
     
+    // Check if we're online
+    if (!navigator.onLine) {
+      console.warn('Browser is offline');
+      this.showNotification('You appear to be offline. Please check your internet connection.', 'warning');
+    }
+    
     auth.onAuthStateChanged(async (user) => {
       console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       if (user) {
@@ -246,10 +252,26 @@ class AdminDashboardFirebase {
       const userId = this.user.uid;
       console.log('User ID:', userId);
       
-      // Test Firestore connection first
-      console.log('Testing Firestore connection...');
-      const testDoc = await db.collection('test').doc('connection').get();
-      console.log('Firestore connection test successful');
+      // Test basic Firestore connection first
+      console.log('Testing basic Firestore connection...');
+      try {
+        await db.collection('test').doc('connection').get();
+        console.log('Basic Firestore connection successful');
+      } catch (connectionError) {
+        console.error('Basic connection failed:', connectionError);
+        throw new Error('Cannot connect to Firebase. Please check your internet connection and try again.');
+      }
+      
+      // Test user-specific connection
+      console.log('Testing user-specific connection...');
+      try {
+        await db.collection('users').doc(userId).get();
+        console.log('User-specific connection successful');
+      } catch (userError) {
+        console.error('User connection failed:', userError);
+        // This might be normal if user document doesn't exist yet
+        console.log('User document might not exist yet, continuing...');
+      }
       
       // Load all data from Firestore
       console.log('Loading tasks...');
@@ -289,13 +311,16 @@ class AdminDashboardFirebase {
       console.error('Error loading data:', error);
       console.error('Error code:', error.code);
       console.error('Error message:', error.message);
-      this.showNotification('Error loading data: ' + error.message, 'error');
       
-      // If it's a permissions error, show specific message
+      // More specific error messages
       if (error.code === 'permission-denied') {
         this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
       } else if (error.code === 'unavailable') {
-        this.showNotification('Firebase is unavailable. Please check your internet connection.', 'error');
+        this.showNotification('Firebase is unavailable. Please check your internet connection and try refreshing the page.', 'error');
+      } else if (error.message.includes('Cannot connect to Firebase')) {
+        this.showNotification(error.message, 'error');
+      } else {
+        this.showNotification('Error loading data: ' + error.message, 'error');
       }
     }
   }
