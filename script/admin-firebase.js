@@ -16,16 +16,20 @@ class AdminDashboardFirebase {
       portfolio: {}
     };
     
+    console.log('AdminDashboardFirebase constructor called');
     this.init();
   }
 
   async init() {
+    console.log('Initializing admin dashboard...');
     this.setupEventListeners();
     await this.checkAuth();
     this.showNotification('Welcome to Admin Dashboard!', 'success');
   }
 
   setupEventListeners() {
+    console.log('Setting up event listeners...');
+    
     // Tab navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -36,43 +40,72 @@ class AdminDashboardFirebase {
     });
 
     // Form submissions
-    document.getElementById('login-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      this.login();
-    });
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        console.log('Login form submitted');
+        this.login();
+      });
+    } else {
+      console.error('Login form not found!');
+    }
 
     // Logout
-    document.querySelector('.logout-btn').addEventListener('click', () => {
-      this.logout();
-    });
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => {
+        this.logout();
+      });
+    }
   }
 
   async checkAuth() {
+    console.log('Checking authentication...');
+    
+    // Check if Firebase auth is available
+    if (typeof auth === 'undefined') {
+      console.error('Firebase auth is not available!');
+      this.showNotification('Firebase not initialized properly', 'error');
+      return;
+    }
+    
     auth.onAuthStateChanged(async (user) => {
+      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       if (user) {
         this.user = user;
+        console.log('User authenticated:', user.email);
         this.showDashboard();
         await this.loadData();
       } else {
+        console.log('No user, showing login screen');
         this.showLogin();
       }
     });
   }
 
   async login() {
+    console.log('Login method called');
+    
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorEl = document.getElementById('login-error');
     const button = document.querySelector('#login-form button');
 
+    console.log('Attempting login with email:', email);
+
     try {
       button.disabled = true;
       button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
 
+      console.log('Calling Firebase auth.signInWithEmailAndPassword...');
       await auth.signInWithEmailAndPassword(email, password);
+      console.log('Login successful!');
+      
       errorEl.style.display = 'none';
       this.showNotification('Login successful!', 'success');
     } catch (error) {
+      console.error('Login error:', error);
       errorEl.textContent = error.message;
       errorEl.style.display = 'block';
       this.showNotification('Login failed: ' + error.message, 'error');
@@ -92,13 +125,22 @@ class AdminDashboardFirebase {
   }
 
   showLogin() {
-    document.getElementById('login-screen').style.display = 'flex';
-    document.getElementById('admin-dashboard').style.display = 'none';
+    console.log('Showing login screen');
+    const loginScreen = document.getElementById('login-screen');
+    const dashboard = document.getElementById('admin-dashboard');
+    
+    if (loginScreen) loginScreen.style.display = 'flex';
+    if (dashboard) dashboard.style.display = 'none';
   }
 
   showDashboard() {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-dashboard').style.display = 'block';
+    console.log('Showing dashboard');
+    const loginScreen = document.getElementById('login-screen');
+    const dashboard = document.getElementById('admin-dashboard');
+    
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (dashboard) dashboard.style.display = 'block';
+    
     this.switchTab('overview');
   }
 
@@ -296,7 +338,13 @@ class AdminDashboardFirebase {
 let adminDashboard;
 
 document.addEventListener('DOMContentLoaded', () => {
-  adminDashboard = new AdminDashboardFirebase();
+  console.log('DOM Content Loaded - Initializing Admin Dashboard');
+  try {
+    adminDashboard = new AdminDashboardFirebase();
+    console.log('Admin Dashboard initialized successfully');
+  } catch (error) {
+    console.error('Error initializing Admin Dashboard:', error);
+  }
 });
 
 // Global functions for HTML onclick handlers
