@@ -138,6 +138,14 @@ class AdminDashboardFirebase {
         console.error('Firebase network error:', error);
         this.updateNetworkStatus('firebase-error');
       });
+    } else {
+      console.warn('Firebase db not available yet, will retry later');
+      // Retry after a delay
+      setTimeout(() => {
+        if (typeof window.db !== 'undefined') {
+          this.setupNetworkMonitoring();
+        }
+      }, 1000);
     }
   }
 
@@ -368,12 +376,24 @@ class AdminDashboardFirebase {
   async checkAuth() {
     console.log('Checking authentication...');
     
+    // Wait for Firebase to be ready
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (typeof window.auth === 'undefined' && attempts < maxAttempts) {
+      console.log(`Waiting for Firebase auth to be ready... (attempt ${attempts + 1}/${maxAttempts})`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      attempts++;
+    }
+    
     // Check if Firebase auth is available
     if (typeof window.auth === 'undefined') {
-      console.error('Firebase auth is not available!');
-      this.showNotification('Firebase not initialized properly', 'error');
+      console.error('Firebase auth is not available after waiting!');
+      this.showNotification('Firebase not initialized properly. Please refresh the page.', 'error');
       return;
     }
+    
+    console.log('Firebase auth is ready, setting up auth state listener...');
     
     // Check if we're online
     if (!navigator.onLine) {
@@ -397,6 +417,13 @@ class AdminDashboardFirebase {
 
   async login() {
     console.log('Login method called');
+    
+    // Ensure Firebase auth is ready
+    if (typeof window.auth === 'undefined') {
+      console.error('Firebase auth is not available!');
+      this.showNotification('Firebase not ready. Please refresh the page.', 'error');
+      return;
+    }
     
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -458,6 +485,14 @@ class AdminDashboardFirebase {
   async loadData() {
     try {
       console.log('Loading data from Firestore...');
+      
+      // Ensure Firebase is ready
+      if (typeof window.db === 'undefined') {
+        console.error('Firebase db is not available!');
+        this.showNotification('Firebase not ready. Please refresh the page.', 'error');
+        return;
+      }
+      
       console.log('Firestore project:', window.db._delegate._databaseId.projectId);
       const userId = this.user.uid;
       console.log('User ID:', userId);
