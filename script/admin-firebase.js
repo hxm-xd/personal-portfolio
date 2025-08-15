@@ -242,37 +242,69 @@ class AdminDashboardFirebase {
 
   async loadData() {
     try {
+      console.log('Loading data from Firestore...');
       const userId = this.user.uid;
+      console.log('User ID:', userId);
+      
+      // Test Firestore connection first
+      console.log('Testing Firestore connection...');
+      const testDoc = await db.collection('test').doc('connection').get();
+      console.log('Firestore connection test successful');
       
       // Load all data from Firestore
+      console.log('Loading tasks...');
       const tasksSnapshot = await db.collection('users').doc(userId).collection('tasks').get();
       this.data.tasks = tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Tasks loaded:', this.data.tasks.length);
 
+      console.log('Loading academics...');
       const academicsSnapshot = await db.collection('users').doc(userId).collection('academics').get();
       this.data.academics = academicsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Academics loaded:', this.data.academics.length);
 
+      console.log('Loading contacts...');
       const contactsSnapshot = await db.collection('users').doc(userId).collection('contacts').get();
       this.data.contacts = contactsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Contacts loaded:', this.data.contacts.length);
 
+      console.log('Loading projects...');
       const projectsSnapshot = await db.collection('users').doc(userId).collection('projects').get();
       this.data.projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      console.log('Projects loaded:', this.data.projects.length);
 
+      console.log('Loading settings...');
       const settingsDoc = await db.collection('users').doc(userId).collection('settings').doc('main').get();
       this.data.settings = settingsDoc.exists ? settingsDoc.data() : {};
+      console.log('Settings loaded');
 
+      console.log('Loading portfolio...');
       const portfolioDoc = await db.collection('users').doc(userId).collection('portfolio').doc('main').get();
       this.data.portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
+      console.log('Portfolio loaded');
 
       this.renderAllData();
       this.loadPortfolioSettings();
+      console.log('All data loaded successfully');
     } catch (error) {
+      console.error('Error loading data:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       this.showNotification('Error loading data: ' + error.message, 'error');
+      
+      // If it's a permissions error, show specific message
+      if (error.code === 'permission-denied') {
+        this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
+      } else if (error.code === 'unavailable') {
+        this.showNotification('Firebase is unavailable. Please check your internet connection.', 'error');
+      }
     }
   }
 
   async saveData() {
     try {
+      console.log('Saving data to Firestore...');
       const userId = this.user.uid;
+      console.log('User ID:', userId);
       
       // Save all data to Firestore
       const batch = db.batch();
@@ -307,10 +339,22 @@ class AdminDashboardFirebase {
       // Save portfolio
       batch.set(db.collection('users').doc(userId).collection('portfolio').doc('main'), this.data.portfolio);
 
+      console.log('Committing batch write...');
       await batch.commit();
+      console.log('Data saved successfully');
       this.showNotification('Data saved successfully!', 'success');
     } catch (error) {
+      console.error('Error saving data:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
       this.showNotification('Error saving data: ' + error.message, 'error');
+      
+      // If it's a permissions error, show specific message
+      if (error.code === 'permission-denied') {
+        this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
+      } else if (error.code === 'unavailable') {
+        this.showNotification('Firebase is unavailable. Please check your internet connection.', 'error');
+      }
     }
   }
 
