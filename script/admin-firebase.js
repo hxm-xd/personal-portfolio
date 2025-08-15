@@ -496,6 +496,15 @@ class AdminDashboardFirebase {
     }
   }
 
+  async forceLogout() {
+    try {
+      await window.auth.signOut();
+      this.showNotification('Force logged out successfully', 'info');
+    } catch (error) {
+      this.showNotification('Force logout error: ' + error.message, 'error');
+    }
+  }
+
   showLogin() {
     console.log('Showing login screen');
     const loginScreen = document.getElementById('login-screen');
@@ -1258,4 +1267,96 @@ async function resetProfileImage() {
   await adminDashboard.saveData();
   await adminDashboard.saveToPublicPortfolio();
   adminDashboard.showNotification('Profile image reset to default!', 'success');
+}
+
+// Additional global functions for admin dashboard
+function markAllRead() {
+  if (adminDashboard) {
+    adminDashboard.data.contacts.forEach(contact => {
+      contact.read = true;
+    });
+    adminDashboard.renderData('contacts');
+    adminDashboard.saveData();
+    adminDashboard.showNotification('All contacts marked as read!', 'success');
+  }
+}
+
+function addSkill(category) {
+  if (adminDashboard) {
+    const skillName = prompt('Enter skill name:');
+    if (skillName) {
+      const skillLevel = prompt('Enter skill level (Beginner/Intermediate/Advanced):');
+      if (skillLevel) {
+        if (!adminDashboard.data.portfolio.skills) {
+          adminDashboard.data.portfolio.skills = {};
+        }
+        if (!adminDashboard.data.portfolio.skills[category]) {
+          adminDashboard.data.portfolio.skills[category] = [];
+        }
+        
+        adminDashboard.data.portfolio.skills[category].push({
+          name: skillName,
+          level: skillLevel
+        });
+        
+        adminDashboard.saveData();
+        adminDashboard.saveToPublicPortfolio();
+        adminDashboard.showNotification('Skill added successfully!', 'success');
+      }
+    }
+  }
+}
+
+function exportData() {
+  if (adminDashboard) {
+    const dataStr = JSON.stringify(adminDashboard.data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'portfolio-data.json';
+    link.click();
+    URL.revokeObjectURL(url);
+    adminDashboard.showNotification('Data exported successfully!', 'success');
+  }
+}
+
+function importData() {
+  if (adminDashboard) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          adminDashboard.data = { ...adminDashboard.data, ...data };
+          await adminDashboard.saveData();
+          adminDashboard.renderAllData();
+          adminDashboard.showNotification('Data imported successfully!', 'success');
+        } catch (error) {
+          adminDashboard.showNotification('Error importing data: ' + error.message, 'error');
+        }
+      }
+    };
+    input.click();
+  }
+}
+
+function clearData() {
+  if (adminDashboard && confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+    adminDashboard.data = {
+      tasks: [],
+      academics: [],
+      contacts: [],
+      projects: [],
+      settings: {},
+      portfolio: {}
+    };
+    adminDashboard.saveData();
+    adminDashboard.renderAllData();
+    adminDashboard.showNotification('All data cleared!', 'success');
+  }
 }
