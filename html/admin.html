@@ -25,7 +25,7 @@
         <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
         <form id="login-form">
           <div class="input-group">
-            <input type="text" id="username" placeholder="Username" required />
+            <input type="email" id="email" placeholder="Email" required />
           </div>
           <div class="input-group">
             <input
@@ -614,8 +614,20 @@
       </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- FullCalendar -->
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.8/index.global.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/daygrid@6.1.8/index.global.min.js"></script>
-    <script src="../script/admin.js"></script>
+
+    <!-- Firebase Config -->
+    <script src="../firebase-config.js"></script>
+
+    <!-- Your Scripts -->
+    <script src="../script/admin-firebase.js"></script>
   </body>
 </html>

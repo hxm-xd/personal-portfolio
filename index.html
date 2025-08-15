@@ -303,7 +303,17 @@
       </div>
     </footer>
 
-    <script src="script/script.js" defer></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- Firebase Config -->
+    <script src="firebase-config.js"></script>
+
+    <!-- Your Scripts -->
+    <script src="script/script-firebase.js" defer></script>
     <div id="lightbox" onclick="closeMedia()">
       <div id="lightbox-content" onclick="event.stopPropagation()"></div>
     </div>

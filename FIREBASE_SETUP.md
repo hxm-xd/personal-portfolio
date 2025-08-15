@@ -50,7 +50,7 @@ This guide will help you set up Firebase to enable cloud-based data storage for 
 
 1. **Go to "Project settings"** (gear icon)
 2. **Scroll down to "Your apps"**
-3. **Click "Add app"** and select "Web" (</>) 
+3. **Click "Add app"** and select "Web" (</>)
 4. **Enter app nickname**: `portfolio-web`
 5. **Click "Register app"**
 6. **Copy the configuration object**
@@ -68,7 +68,7 @@ const firebaseConfig = {
   projectId: "your-project-id",
   storageBucket: "your-project-id.appspot.com",
   messagingSenderId: "your-sender-id",
-  appId: "your-app-id"
+  appId: "your-app-id",
 };
 ```
 
@@ -122,7 +122,7 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Public portfolio data (read-only for everyone)
     match /public/portfolio/{document=**} {
       allow read: if true;
@@ -172,7 +172,7 @@ users/
         status: string
         createdAt: timestamp
         updatedAt: timestamp
-    
+
     academics/
       {academicId}/
         title: string
@@ -182,7 +182,7 @@ users/
         status: string
         createdAt: timestamp
         updatedAt: timestamp
-    
+
     contacts/
       {contactId}/
         name: string
@@ -190,7 +190,7 @@ users/
         message: string
         timestamp: timestamp
         read: boolean
-    
+
     projects/
       {projectId}/
         title: string
@@ -201,11 +201,11 @@ users/
         status: string
         createdAt: timestamp
         updatedAt: timestamp
-    
+
     settings/
       main/
         // User settings
-    
+
     portfolio/
       main/
         name: string
@@ -245,14 +245,17 @@ public/
 ### Common Issues:
 
 1. **"Firebase not initialized"**
+
    - Check if Firebase SDK is loaded before your scripts
    - Verify configuration object is correct
 
 2. **"Permission denied"**
+
    - Check Firestore security rules
    - Ensure user is authenticated
 
 3. **"Storage permission denied"**
+
    - Check Storage security rules
    - Verify user authentication
 
@@ -269,6 +272,7 @@ public/
 ## Next Steps
 
 After setup, you can:
+
 1. **Customize the database structure**
 2. **Add more authentication methods**
 3. **Implement real-time features**

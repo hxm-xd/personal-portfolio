@@ -1,13 +1,21 @@
 // Firebase Configuration
 // Replace with your own Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+
+  apiKey: "AIzaSyA48faYVm5GpZrD_oPNnjFfwO4hmeXz7B0",
+
+  authDomain: "personal-portfolio-de316.firebaseapp.com",
+
+  projectId: "personal-portfolio-de316",
+
+  storageBucket: "personal-portfolio-de316.firebasestorage.app",
+
+  messagingSenderId: "537969276209",
+
+  appId: "1:537969276209:web:1b730632fd3fa489126c10"
+
 };
+
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
