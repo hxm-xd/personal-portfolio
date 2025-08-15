@@ -22,6 +22,11 @@ firebase.initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 const db = firebase.firestore();
+// Set the correct region for Firestore
+db.settings({
+  region: 'nam5' // North America 5 region
+});
+
 const auth = firebase.auth();
 const storage = firebase.storage();
 

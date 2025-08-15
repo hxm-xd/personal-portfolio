@@ -249,6 +249,7 @@ class AdminDashboardFirebase {
   async loadData() {
     try {
       console.log('Loading data from Firestore...');
+      console.log('Firestore region:', db._delegate._databaseId.projectId);
       const userId = this.user.uid;
       console.log('User ID:', userId);
       
