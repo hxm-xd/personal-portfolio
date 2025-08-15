@@ -505,7 +505,7 @@ class AdminDashboardFirebase {
     this.editId = null;
   }
 
-  handleModalSubmit(type) {
+  async handleModalSubmit(type) {
     const title = document.getElementById('modal-title-input').value;
     const description = document.getElementById('modal-description-input').value;
     const status = document.getElementById('modal-status-input')?.value;
@@ -525,19 +525,25 @@ class AdminDashboardFirebase {
     if (image) item.image = image;
     
     if (this.editId) {
-      this.updateItem(type, this.editId, item);
+      await this.updateItem(type, this.editId, item);
     } else {
-      this.addItem(type, item);
+      await this.addItem(type, item);
     }
     
     this.closeModal();
   }
 
-  addItem(type, item) {
+  async addItem(type, item) {
     item.id = this.generateId();
     this.data[type].push(item);
     this.renderData(type);
-    this.saveData();
+    await this.saveData();
+    
+    // If it's a project, also save to public portfolio
+    if (type === 'projects') {
+      await this.saveToPublicPortfolio();
+    }
+    
     this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} added successfully!`, 'success');
   }
 
@@ -561,22 +567,34 @@ class AdminDashboardFirebase {
     }, 100);
   }
 
-  updateItem(type, id, updatedItem) {
+  async updateItem(type, id, updatedItem) {
     const index = this.data[type].findIndex(item => item.id === id);
     if (index === -1) return;
     
     this.data[type][index] = { ...this.data[type][index], ...updatedItem };
     this.renderData(type);
-    this.saveData();
+    await this.saveData();
+    
+    // If it's a project, also save to public portfolio
+    if (type === 'projects') {
+      await this.saveToPublicPortfolio();
+    }
+    
     this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`, 'success');
   }
 
-  deleteItem(type, id) {
+  async deleteItem(type, id) {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
     
     this.data[type] = this.data[type].filter(item => item.id !== id);
     this.renderData(type);
-    this.saveData();
+    await this.saveData();
+    
+    // If it's a project, also save to public portfolio
+    if (type === 'projects') {
+      await this.saveToPublicPortfolio();
+    }
+    
     this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
   }
 
@@ -630,6 +648,7 @@ class AdminDashboardFirebase {
     
     this.data.portfolio.profile = profile;
     await this.saveData();
+    await this.saveToPublicPortfolio();
     this.showNotification('Profile information saved!', 'success');
   }
 
@@ -643,6 +662,7 @@ class AdminDashboardFirebase {
     
     this.data.portfolio.social = social;
     await this.saveData();
+    await this.saveToPublicPortfolio();
     this.showNotification('Social links saved!', 'success');
   }
 
@@ -655,6 +675,7 @@ class AdminDashboardFirebase {
     
     this.data.portfolio.stats = stats;
     await this.saveData();
+    await this.saveToPublicPortfolio();
     this.showNotification('Statistics saved!', 'success');
   }
 
@@ -667,7 +688,41 @@ class AdminDashboardFirebase {
     
     this.data.portfolio.contact = contact;
     await this.saveData();
+    await this.saveToPublicPortfolio();
     this.showNotification('Contact information saved!', 'success');
+  }
+
+  async saveToPublicPortfolio() {
+    try {
+      // Save portfolio settings to public location
+      await db.collection('public').doc('portfolio').set({
+        profile: this.data.portfolio.profile || {},
+        social: this.data.portfolio.social || {},
+        stats: this.data.portfolio.stats || {},
+        contact: this.data.portfolio.contact || {},
+        profileImage: this.data.portfolio.profileImage || '',
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+      
+      // Save projects to public location
+      const projectsRef = db.collection('public').doc('portfolio').collection('projects');
+      
+      // Clear existing projects
+      const existingProjects = await projectsRef.get();
+      const deletePromises = existingProjects.docs.map(doc => doc.ref.delete());
+      await Promise.all(deletePromises);
+      
+      // Add current projects
+      const addPromises = this.data.projects.map(project => 
+        projectsRef.add(project)
+      );
+      await Promise.all(addPromises);
+      
+      console.log('Portfolio data saved to public location');
+    } catch (error) {
+      console.error('Error saving to public portfolio:', error);
+      this.showNotification('Error saving to public portfolio: ' + error.message, 'error');
+    }
   }
 
   async handleProfileImageUpload(file) {
@@ -682,6 +737,7 @@ class AdminDashboardFirebase {
       this.data.portfolio.profileImage = downloadURL;
       document.getElementById('current-profile-img').src = downloadURL;
       await this.saveData();
+      await this.saveToPublicPortfolio();
       this.showNotification('Profile image uploaded successfully!', 'success');
     } catch (error) {
       this.showNotification('Error uploading image: ' + error.message, 'error');
@@ -777,9 +833,10 @@ function deleteItem(type, id) {
   adminDashboard.deleteItem(type, id);
 }
 
-function resetProfileImage() {
+async function resetProfileImage() {
   document.getElementById('current-profile-img').src = '../assets/profile.jpg';
   adminDashboard.data.portfolio.profileImage = null;
-  adminDashboard.saveData();
+  await adminDashboard.saveData();
+  await adminDashboard.saveToPublicPortfolio();
   adminDashboard.showNotification('Profile image reset to default!', 'success');
 }
