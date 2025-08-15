@@ -24,7 +24,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 // Set the correct region for Firestore
 db.settings({
-  region: 'nam5' // North America 5 region
+  region: 'nam5', // North America 5 region
+  merge: true // Merge with existing settings instead of overriding
 });
 
 const auth = firebase.auth();

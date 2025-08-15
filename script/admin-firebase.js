@@ -256,11 +256,19 @@ class AdminDashboardFirebase {
       // Test basic Firestore connection first
       console.log('Testing basic Firestore connection...');
       try {
-        await db.collection('test').doc('connection').get();
+        // Try a simple collection list instead of a specific document
+        await db.collection('users').limit(1).get();
         console.log('Basic Firestore connection successful');
       } catch (connectionError) {
         console.error('Basic connection failed:', connectionError);
-        throw new Error('Cannot connect to Firebase. Please check your internet connection and try again.');
+        console.error('Connection error details:', connectionError.code, connectionError.message);
+        
+        // If it's a permissions error, that's actually good - it means we can connect
+        if (connectionError.code === 'permission-denied') {
+          console.log('Connection successful (permission denied is expected for empty collection)');
+        } else {
+          throw new Error('Cannot connect to Firebase. Please check your internet connection and try again.');
+        }
       }
       
       // Test user-specific connection
