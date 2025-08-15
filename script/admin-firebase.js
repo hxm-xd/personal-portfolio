@@ -17,14 +17,48 @@ class AdminDashboardFirebase {
     };
     
     console.log('AdminDashboardFirebase constructor called');
-    this.init();
+    // Add a small delay to ensure DOM is ready
+    setTimeout(() => {
+      this.init();
+    }, 100);
   }
 
   async init() {
     console.log('Initializing admin dashboard...');
+    
+    // Check if DOM elements exist before proceeding
+    if (!this.checkDOMElements()) {
+      console.error('Required DOM elements not found, retrying in 500ms...');
+      setTimeout(() => {
+        this.init();
+      }, 500);
+      return;
+    }
+    
     this.setupEventListeners();
     await this.checkAuth();
     this.showNotification('Welcome to Admin Dashboard!', 'success');
+  }
+
+  checkDOMElements() {
+    const requiredElements = [
+      'login-form',
+      'login-screen',
+      'admin-dashboard',
+      'email',
+      'password'
+    ];
+    
+    for (const elementId of requiredElements) {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        console.error(`Required element not found: ${elementId}`);
+        return false;
+      }
+    }
+    
+    console.log('All required DOM elements found');
+    return true;
   }
 
   setupEventListeners() {
@@ -47,6 +81,7 @@ class AdminDashboardFirebase {
         console.log('Login form submitted');
         this.login();
       });
+      console.log('Login form event listener added');
     } else {
       console.error('Login form not found!');
     }
@@ -57,6 +92,9 @@ class AdminDashboardFirebase {
       logoutBtn.addEventListener('click', () => {
         this.logout();
       });
+      console.log('Logout button event listener added');
+    } else {
+      console.log('Logout button not found (normal if not logged in)');
     }
   }
 
