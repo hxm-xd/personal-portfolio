@@ -96,6 +96,64 @@ class AdminDashboardFirebase {
     } else {
       console.log('Logout button not found (normal if not logged in)');
     }
+
+    // Portfolio settings forms
+    this.setupPortfolioForms();
+  }
+
+  setupPortfolioForms() {
+    // Profile form
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+      profileForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveProfileInfo();
+      });
+    }
+
+    // Social links form
+    const socialForm = document.getElementById('social-form');
+    if (socialForm) {
+      socialForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveSocialLinks();
+      });
+    }
+
+    // Statistics form
+    const statsForm = document.getElementById('stats-form');
+    if (statsForm) {
+      statsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveStatistics();
+      });
+    }
+
+    // Contact info form
+    const contactInfoForm = document.getElementById('contact-info-form');
+    if (contactInfoForm) {
+      contactInfoForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveContactInfo();
+      });
+    }
+
+    // Password form
+    const passwordForm = document.getElementById('password-form');
+    if (passwordForm) {
+      passwordForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.changePassword();
+      });
+    }
+
+    // Profile image upload
+    const profileImageInput = document.getElementById('profile-image-input');
+    if (profileImageInput) {
+      profileImageInput.addEventListener('change', (e) => {
+        this.handleProfileImageUpload(e.target.files[0]);
+      });
+    }
   }
 
   async checkAuth() {
@@ -206,6 +264,7 @@ class AdminDashboardFirebase {
       this.data.portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
 
       this.renderAllData();
+      this.loadPortfolioSettings();
     } catch (error) {
       this.showNotification('Error loading data: ' + error.message, 'error');
     }
@@ -287,7 +346,7 @@ class AdminDashboardFirebase {
 
   // Render data for different sections
   renderData(type) {
-    const container = document.getElementById(type);
+    const container = document.getElementById(type === 'projects' ? 'projects-list' : `${type}-list`);
     if (!container) return;
 
     const items = this.data[type];
@@ -303,11 +362,24 @@ class AdminDashboardFirebase {
     }
 
     const itemsHTML = items.map(item => {
+      const statusClass = item.status ? `status-${item.status}` : '';
+      const statusText = item.status ? item.status.replace('-', ' ') : '';
+      
       return `
-        <div class="item-card">
+        <div class="item-card ${statusClass}">
           <div class="item-content">
-            <h4 class="item-title">${item.title}</h4>
-            <p class="item-description">${item.description}</p>
+            <h4 class="item-title">${item.title || item.name}</h4>
+            <p class="item-description">${item.description || item.message || ''}</p>
+            ${item.status ? `<span class="status-badge">${statusText}</span>` : ''}
+            ${item.deadline ? `<span class="deadline">Due: ${new Date(item.deadline).toLocaleDateString()}</span>` : ''}
+          </div>
+          <div class="item-actions">
+            <button onclick="editItem('${type}', '${item.id}')" class="btn-secondary">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger">
+              <i class="fas fa-trash"></i>
+            </button>
           </div>
         </div>
       `;
@@ -344,6 +416,301 @@ class AdminDashboardFirebase {
     if (contactCount) contactCount.textContent = stats.contacts;
     if (deadlineCount) deadlineCount.textContent = stats.tasks + stats.academics;
     if (viewCount) viewCount.textContent = '0'; // Placeholder
+  }
+
+  // Modal functions
+  openModal(type) {
+    this.editId = null;
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalFields = document.getElementById('modal-fields');
+    
+    modalTitle.textContent = `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    
+    let fieldsHTML = '';
+    
+    if (type === 'task') {
+      fieldsHTML = `
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="modal-title-input" placeholder="Task title" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="modal-description-input" placeholder="Task description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="modal-status-input">
+            <option value="pending">Pending</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="modal-deadline-input">
+        </div>
+      `;
+    } else if (type === 'academic') {
+      fieldsHTML = `
+        <div class="form-group">
+          <label>Course/Subject</label>
+          <input type="text" id="modal-title-input" placeholder="Course name" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="modal-description-input" placeholder="Course description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Deadline</label>
+          <input type="date" id="modal-deadline-input">
+        </div>
+      `;
+    } else if (type === 'project') {
+      fieldsHTML = `
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="modal-title-input" placeholder="Project name" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="modal-description-input" placeholder="Project description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>URL (optional)</label>
+          <input type="url" id="modal-url-input" placeholder="https://project-url.com">
+        </div>
+        <div class="form-group">
+          <label>Image URL (optional)</label>
+          <input type="url" id="modal-image-input" placeholder="https://image-url.com">
+        </div>
+      `;
+    }
+    
+    modalFields.innerHTML = fieldsHTML;
+    modal.style.display = 'flex';
+    
+    // Setup modal form submission
+    const modalForm = document.getElementById('modal-form');
+    modalForm.onsubmit = (e) => {
+      e.preventDefault();
+      this.handleModalSubmit(type);
+    };
+  }
+
+  closeModal() {
+    const modal = document.getElementById('modal');
+    modal.style.display = 'none';
+    this.editId = null;
+  }
+
+  handleModalSubmit(type) {
+    const title = document.getElementById('modal-title-input').value;
+    const description = document.getElementById('modal-description-input').value;
+    const status = document.getElementById('modal-status-input')?.value;
+    const deadline = document.getElementById('modal-deadline-input')?.value;
+    const url = document.getElementById('modal-url-input')?.value;
+    const image = document.getElementById('modal-image-input')?.value;
+    
+    const item = {
+      title: title,
+      description: description,
+      createdAt: new Date().toISOString()
+    };
+    
+    if (status) item.status = status;
+    if (deadline) item.deadline = deadline;
+    if (url) item.url = url;
+    if (image) item.image = image;
+    
+    if (this.editId) {
+      this.updateItem(type, this.editId, item);
+    } else {
+      this.addItem(type, item);
+    }
+    
+    this.closeModal();
+  }
+
+  addItem(type, item) {
+    item.id = this.generateId();
+    this.data[type].push(item);
+    this.renderData(type);
+    this.saveData();
+    this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} added successfully!`, 'success');
+  }
+
+  editItem(type, id) {
+    const item = this.data[type].find(item => item.id === id);
+    if (!item) return;
+    
+    this.editId = id;
+    this.openModal(type);
+    
+    // Populate form fields
+    setTimeout(() => {
+      document.getElementById('modal-title-input').value = item.title || '';
+      document.getElementById('modal-description-input').value = item.description || '';
+      if (item.status) document.getElementById('modal-status-input').value = item.status;
+      if (item.deadline) document.getElementById('modal-deadline-input').value = item.deadline;
+      if (item.url) document.getElementById('modal-url-input').value = item.url;
+      if (item.image) document.getElementById('modal-image-input').value = item.image;
+      
+      document.getElementById('modal-title').textContent = `Edit ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    }, 100);
+  }
+
+  updateItem(type, id, updatedItem) {
+    const index = this.data[type].findIndex(item => item.id === id);
+    if (index === -1) return;
+    
+    this.data[type][index] = { ...this.data[type][index], ...updatedItem };
+    this.renderData(type);
+    this.saveData();
+    this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} updated successfully!`, 'success');
+  }
+
+  deleteItem(type, id) {
+    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+    
+    this.data[type] = this.data[type].filter(item => item.id !== id);
+    this.renderData(type);
+    this.saveData();
+    this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
+  }
+
+  // Portfolio settings functions
+  loadPortfolioSettings() {
+    const portfolio = this.data.portfolio;
+    
+    // Load profile info
+    if (portfolio.profile) {
+      document.getElementById('profile-name').value = portfolio.profile.name || '';
+      document.getElementById('profile-title').value = portfolio.profile.title || '';
+      document.getElementById('profile-subtitle').value = portfolio.profile.subtitle || '';
+      document.getElementById('profile-about').value = portfolio.profile.about || '';
+    }
+    
+    // Load social links
+    if (portfolio.social) {
+      document.getElementById('social-github').value = portfolio.social.github || '';
+      document.getElementById('social-linkedin').value = portfolio.social.linkedin || '';
+      document.getElementById('social-twitter').value = portfolio.social.twitter || '';
+      document.getElementById('social-email').value = portfolio.social.email || '';
+    }
+    
+    // Load statistics
+    if (portfolio.stats) {
+      document.getElementById('stats-experience').value = portfolio.stats.experience || '';
+      document.getElementById('stats-projects').value = portfolio.stats.projects || '';
+      document.getElementById('stats-technologies').value = portfolio.stats.technologies || '';
+    }
+    
+    // Load contact info
+    if (portfolio.contact) {
+      document.getElementById('contact-location').value = portfolio.contact.location || '';
+      document.getElementById('contact-email').value = portfolio.contact.email || '';
+      document.getElementById('contact-education').value = portfolio.contact.education || '';
+    }
+    
+    // Load profile image
+    if (portfolio.profileImage) {
+      document.getElementById('current-profile-img').src = portfolio.profileImage;
+    }
+  }
+
+  async saveProfileInfo() {
+    const profile = {
+      name: document.getElementById('profile-name').value,
+      title: document.getElementById('profile-title').value,
+      subtitle: document.getElementById('profile-subtitle').value,
+      about: document.getElementById('profile-about').value
+    };
+    
+    this.data.portfolio.profile = profile;
+    await this.saveData();
+    this.showNotification('Profile information saved!', 'success');
+  }
+
+  async saveSocialLinks() {
+    const social = {
+      github: document.getElementById('social-github').value,
+      linkedin: document.getElementById('social-linkedin').value,
+      twitter: document.getElementById('social-twitter').value,
+      email: document.getElementById('social-email').value
+    };
+    
+    this.data.portfolio.social = social;
+    await this.saveData();
+    this.showNotification('Social links saved!', 'success');
+  }
+
+  async saveStatistics() {
+    const stats = {
+      experience: document.getElementById('stats-experience').value,
+      projects: document.getElementById('stats-projects').value,
+      technologies: document.getElementById('stats-technologies').value
+    };
+    
+    this.data.portfolio.stats = stats;
+    await this.saveData();
+    this.showNotification('Statistics saved!', 'success');
+  }
+
+  async saveContactInfo() {
+    const contact = {
+      location: document.getElementById('contact-location').value,
+      email: document.getElementById('contact-email').value,
+      education: document.getElementById('contact-education').value
+    };
+    
+    this.data.portfolio.contact = contact;
+    await this.saveData();
+    this.showNotification('Contact information saved!', 'success');
+  }
+
+  async handleProfileImageUpload(file) {
+    if (!file) return;
+    
+    try {
+      const userId = this.user.uid;
+      const storageRef = storage.ref(`profile-images/${userId}/${file.name}`);
+      const snapshot = await storageRef.put(file);
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      
+      this.data.portfolio.profileImage = downloadURL;
+      document.getElementById('current-profile-img').src = downloadURL;
+      await this.saveData();
+      this.showNotification('Profile image uploaded successfully!', 'success');
+    } catch (error) {
+      this.showNotification('Error uploading image: ' + error.message, 'error');
+    }
+  }
+
+  async changePassword() {
+    const currentPassword = document.getElementById('current-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    if (newPassword !== confirmPassword) {
+      this.showNotification('New passwords do not match!', 'error');
+      return;
+    }
+    
+    try {
+      // Re-authenticate user
+      const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPassword);
+      await this.user.reauthenticateWithCredential(credential);
+      
+      // Change password
+      await this.user.updatePassword(newPassword);
+      
+      this.showNotification('Password changed successfully!', 'success');
+      document.getElementById('password-form').reset();
+    } catch (error) {
+      this.showNotification('Error changing password: ' + error.message, 'error');
+    }
   }
 
   // Utility methods
@@ -392,4 +759,27 @@ function switchTab(tab) {
 
 function logout() {
   adminDashboard.logout();
+}
+
+function openModal(type) {
+  adminDashboard.openModal(type);
+}
+
+function closeModal() {
+  adminDashboard.closeModal();
+}
+
+function editItem(type, id) {
+  adminDashboard.editItem(type, id);
+}
+
+function deleteItem(type, id) {
+  adminDashboard.deleteItem(type, id);
+}
+
+function resetProfileImage() {
+  document.getElementById('current-profile-img').src = '../assets/profile.jpg';
+  adminDashboard.data.portfolio.profileImage = null;
+  adminDashboard.saveData();
+  adminDashboard.showNotification('Profile image reset to default!', 'success');
 }
