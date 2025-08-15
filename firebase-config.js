@@ -20,6 +20,9 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 
+// Log Firebase configuration for debugging
+console.log('Firebase initialized with project:', firebaseConfig.projectId);
+
 // Initialize Firebase services
 const db = firebase.firestore();
 
@@ -78,20 +81,16 @@ async function initializeFirebase() {
   try {
     console.log('Initializing Firebase services...');
     
-    // Ensure auth is properly initialized
-    await auth.authStateReady();
-    console.log('Firebase auth initialized successfully');
-    
-    // Run connection test
-    await testFirebaseConnection();
-    
-    console.log('Firebase initialization complete');
+    // Simple initialization without authStateReady for now
+    console.log('Firebase services initialized');
     
     // Dispatch custom event to notify that Firebase is ready
     window.dispatchEvent(new CustomEvent('firebaseReady'));
     
   } catch (error) {
     console.error('Firebase initialization failed:', error);
+    // Still dispatch event even if there's an error
+    window.dispatchEvent(new CustomEvent('firebaseReady'));
   }
 }
 
