@@ -31,16 +31,16 @@ async function loadProjectsFromFirebase() {
     const projectsSnapshot = await db.collection('public').doc('portfolio').collection('projects').get();
     const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    if (projects.length === 0) {
-      // Show sample projects if none exist
-      displayProjects(getSampleProjects());
-    } else {
-      displayProjects(projects);
-    }
+      if (projects.length === 0) {
+    // Show empty state if no projects exist
+    displayProjects([]);
+  } else {
+    displayProjects(projects);
+  }
   } catch (error) {
     console.error('Error loading projects:', error);
-    // Fallback to sample projects
-    displayProjects(getSampleProjects());
+    // Fallback to empty state
+    displayProjects([]);
   }
 }
 
@@ -151,8 +151,8 @@ function displayProjects(projects) {
     projectsContainer.innerHTML = `
       <div class="no-projects">
         <i class="fas fa-folder-open"></i>
-        <h3>No projects yet</h3>
-        <p>Projects will appear here once they're added to the portfolio.</p>
+        <h3>No projects available</h3>
+        <p>Projects will be displayed here once they are added.</p>
       </div>
     `;
     return;
@@ -186,31 +186,9 @@ function displayProjects(projects) {
   projectsContainer.innerHTML = projectsHTML;
 }
 
-// Get sample projects for fallback
+// Get empty projects array - no sample data
 function getSampleProjects() {
-  return [
-    {
-      title: "Smart Home IoT System",
-      description: "A comprehensive IoT solution for home automation using ESP32 and mobile app control.",
-      technologies: "ESP32, Flutter, Firebase, IoT",
-      image: "https://via.placeholder.com/400x300/6366f1/ffffff?text=IoT+Project",
-      url: "#"
-    },
-    {
-      title: "E-Commerce Mobile App",
-      description: "Cross-platform mobile application for online shopping with payment integration.",
-      technologies: "Flutter, Dart, Firebase, Stripe",
-      image: "https://via.placeholder.com/400x300/10b981/ffffff?text=Mobile+App",
-      url: "#"
-    },
-    {
-      title: "Portfolio Website",
-      description: "Modern responsive portfolio website with admin dashboard and dynamic content management.",
-      technologies: "HTML5, CSS3, JavaScript, Firebase",
-      image: "https://via.placeholder.com/400x300/f59e0b/ffffff?text=Portfolio",
-      url: "#"
-    }
-  ];
+  return [];
 }
 
 // Update skills on the portfolio page

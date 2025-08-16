@@ -18,36 +18,8 @@ function loadProjectsFromAdmin() {
   const projects = JSON.parse(localStorage.getItem('admin_projects') || '[]');
   
   if (projects.length === 0) {
-    // Add sample projects if none exist
-    const sampleProjects = [
-      {
-        id: '1',
-        title: 'Smart Home IoT System',
-        description: 'A comprehensive IoT system for home automation using Arduino and ESP32. Features include smart lighting, temperature monitoring, and security alerts.',
-        technologies: 'Arduino, ESP32, C++, Firebase',
-        url: '#',
-        image: 'https://via.placeholder.com/400x300/6366f1/ffffff?text=IoT+Project'
-      },
-      {
-        id: '2',
-        title: 'Flutter E-Commerce App',
-        description: 'A modern e-commerce mobile application built with Flutter and Firebase. Includes user authentication, product catalog, and payment integration.',
-        technologies: 'Flutter, Firebase, Dart, Stripe',
-        url: '#',
-        image: 'https://via.placeholder.com/400x300/10b981/ffffff?text=Mobile+App'
-      },
-      {
-        id: '3',
-        title: 'AI-Powered Chatbot',
-        description: 'An intelligent chatbot using Python and natural language processing. Can handle customer inquiries and provide automated responses.',
-        technologies: 'Python, NLP, TensorFlow, Flask',
-        url: '#',
-        image: 'https://via.placeholder.com/400x300/f59e0b/ffffff?text=Portfolio'
-      }
-    ];
-    
-    localStorage.setItem('admin_projects', JSON.stringify(sampleProjects));
-    displayProjects(sampleProjects);
+    // Show empty state - no sample projects
+    displayProjects([]);
   } else {
     displayProjects(projects);
   }
@@ -61,8 +33,8 @@ function displayProjects(projects) {
     container.innerHTML = `
       <div class="no-projects">
         <i class="fas fa-briefcase" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
-        <h3>No projects yet</h3>
-        <p>Projects will appear here once added through the admin dashboard.</p>
+        <h3>No projects available</h3>
+        <p>Projects will be displayed here once they are added.</p>
       </div>
     `;
     return;
