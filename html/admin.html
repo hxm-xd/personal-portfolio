@@ -98,7 +98,7 @@
           <i class="fas fa-cog"></i>
           Settings
         </button>
-        <button class="nav-btn" onclick="window.open('index.html', '_blank')">
+        <button class="nav-btn" onclick="window.open('../index.html', '_blank')">
           <i class="fas fa-external-link-alt"></i>
           View Portfolio
         </button>
@@ -400,11 +400,14 @@
               <div class="skills-management">
                 <div class="skills-header">
                   <h3><i class="fas fa-tools"></i> Skills & Technologies</h3>
-                  <p style="color: var(--text-secondary); margin-bottom: 1.5rem">
-                    Manage your technical skills and proficiency levels. Skills will be displayed on your public portfolio.
+                  <p
+                    style="color: var(--text-secondary); margin-bottom: 1.5rem"
+                  >
+                    Manage your technical skills and proficiency levels. Skills
+                    will be displayed on your public portfolio.
                   </p>
                 </div>
-                
+
                 <div class="skills-categories">
                   <div class="skill-category">
                     <div class="category-header">
@@ -675,7 +678,12 @@
         <form id="skill-modal-form">
           <div class="form-group">
             <label for="skill-name">Skill Name</label>
-            <input type="text" id="skill-name" placeholder="e.g., JavaScript, React, Python" required>
+            <input
+              type="text"
+              id="skill-name"
+              placeholder="e.g., JavaScript, React, Python"
+              required
+            />
           </div>
           <div class="form-group">
             <label for="skill-level">Proficiency Level</label>
@@ -689,10 +697,18 @@
           </div>
           <div class="form-group">
             <label for="skill-description">Description (Optional)</label>
-            <textarea id="skill-description" placeholder="Brief description of your experience with this skill..." rows="3"></textarea>
+            <textarea
+              id="skill-description"
+              placeholder="Brief description of your experience with this skill..."
+              rows="3"
+            ></textarea>
           </div>
           <div class="modal-actions">
-            <button type="button" onclick="closeSkillModal()" class="btn-secondary">
+            <button
+              type="button"
+              onclick="closeSkillModal()"
+              class="btn-secondary"
+            >
               <i class="fas fa-times"></i>
               Cancel
             </button>
