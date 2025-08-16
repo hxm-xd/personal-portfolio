@@ -245,6 +245,7 @@ class AdminDashboard {
 
   async saveData() {
     try {
+      console.log('Saving data:', this.data);
       const userId = this.user.uid;
       const batch = window.db.batch();
 
@@ -262,6 +263,7 @@ class AdminDashboard {
 
       // Save collections
       ['tasks', 'academics', 'contacts', 'projects'].forEach(collection => {
+        console.log(`Saving ${collection}:`, this.data[collection]);
         this.data[collection].forEach(item => {
           const docRef = window.db.collection('users').doc(userId).collection(collection).doc(item.id);
           batch.set(docRef, cleanData(item));
@@ -284,6 +286,7 @@ class AdminDashboard {
   }
 
   switchTab(tab) {
+    console.log('Switching to tab:', tab);
     this.currentTab = tab;
     
     // Update navigation
@@ -300,6 +303,7 @@ class AdminDashboard {
     } else if (['tasks', 'academics', 'contacts'].includes(tab)) {
       this.renderData(tab);
     } else if (tab === 'portfolio') {
+      console.log('Rendering projects for portfolio tab');
       this.renderData('projects');
     } else if (tab === 'portfolio-settings') {
       setTimeout(() => {
@@ -310,8 +314,13 @@ class AdminDashboard {
   }
 
   renderData(type) {
+    console.log('Rendering data for:', type, this.data[type]);
+    
     const container = document.getElementById(type === 'projects' ? 'projects-list' : `${type}-list`);
-    if (!container) return;
+    if (!container) {
+      console.error('Container not found for:', type);
+      return;
+    }
 
     // Ensure the array exists
     if (!this.data[type]) {
@@ -319,6 +328,8 @@ class AdminDashboard {
     }
 
     const items = this.data[type];
+    console.log('Items to render:', items);
+    
     if (items.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
@@ -504,6 +515,8 @@ class AdminDashboard {
   }
 
   async addItem(type, item) {
+    console.log('Adding item:', type, item);
+    
     // Ensure the array exists
     if (!this.data[type]) {
       this.data[type] = [];
@@ -511,6 +524,8 @@ class AdminDashboard {
     
     item.id = this.generateId();
     this.data[type].push(item);
+    console.log('Item added to data:', this.data[type]);
+    
     this.renderData(type);
     await this.saveData();
     
