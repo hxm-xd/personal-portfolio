@@ -294,7 +294,6 @@ class AdminDashboard {
     // Load specific data
     if (tab === 'overview') {
       this.loadOverviewData();
-      this.loadPortfolioSettings(); // Also load portfolio settings to keep overview updated
     } else if (['tasks', 'academics', 'contacts'].includes(tab)) {
       this.renderData(tab);
     } else if (tab === 'portfolio') {
@@ -380,6 +379,9 @@ class AdminDashboard {
         }
       });
     }
+    
+    // Also refresh the portfolio settings display in the overview tab
+    this.loadPortfolioSettings();
   }
 
   openModal(type) {
