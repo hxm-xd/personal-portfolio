@@ -380,6 +380,9 @@ class AdminDashboard {
       });
     }
     
+    // Update social media shortcuts
+    this.updateSocialShortcuts();
+    
     // Also refresh the portfolio settings display in the overview tab
     this.loadPortfolioSettings();
   }
@@ -629,6 +632,39 @@ class AdminDashboard {
         `).join('');
       }
     });
+  }
+
+  updateSocialShortcuts() {
+    const portfolio = this.data.portfolio;
+    if (!portfolio.social) return;
+    
+    // Update GitHub shortcut
+    const githubShortcut = document.getElementById('github-shortcut');
+    if (githubShortcut && portfolio.social.github) {
+      githubShortcut.href = portfolio.social.github;
+      githubShortcut.style.opacity = '1';
+    }
+    
+    // Update LinkedIn shortcut
+    const linkedinShortcut = document.getElementById('linkedin-shortcut');
+    if (linkedinShortcut && portfolio.social.linkedin) {
+      linkedinShortcut.href = portfolio.social.linkedin;
+      linkedinShortcut.style.opacity = '1';
+    }
+    
+    // Update Twitter shortcut
+    const twitterShortcut = document.getElementById('twitter-shortcut');
+    if (twitterShortcut && portfolio.social.twitter) {
+      twitterShortcut.href = portfolio.social.twitter;
+      twitterShortcut.style.opacity = '1';
+    }
+    
+    // Update Email shortcut
+    const emailShortcut = document.getElementById('email-shortcut');
+    if (emailShortcut && portfolio.social.email) {
+      emailShortcut.href = `mailto:${portfolio.social.email}`;
+      emailShortcut.style.opacity = '1';
+    }
   }
 
   async handleFormSubmit(formId) {

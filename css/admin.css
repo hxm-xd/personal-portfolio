@@ -581,6 +581,72 @@ body {
   color: var(--text-primary);
 }
 
+/* Social Shortcuts */
+.social-shortcuts {
+  margin-top: 2rem;
+  background: var(--bg-primary);
+  padding: 2rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.social-shortcuts h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.social-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.social-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  transition: var(--transition);
+  text-align: center;
+}
+
+.social-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.social-card i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.social-card span {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.social-card[href="#"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.social-card[href="#"]:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
 /* Filters */
 .filters {
   display: flex;
