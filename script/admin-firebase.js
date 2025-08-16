@@ -211,6 +211,9 @@ class AdminDashboard {
       this.data.settings = settings.status === 'fulfilled' ? settings.value : {};
       this.data.portfolio = portfolio.status === 'fulfilled' ? portfolio.value : {};
 
+      console.log('Loaded contacts:', this.data.contacts);
+      console.log('Contacts array length:', this.data.contacts.length);
+
       this.renderAllData();
       this.loadPortfolioSettings();
     } catch (error) {
@@ -332,9 +335,17 @@ class AdminDashboard {
     
     console.log('Rendering data for:', type, 'using dataKey:', dataKey, this.data[dataKey]);
     
-    const container = document.getElementById(dataKey === 'projects' ? 'projects-list' : `${dataKey}-list`);
+    // Special handling for contacts container
+    let container;
+    if (type === 'contacts') {
+      container = document.getElementById('contacts-list');
+      console.log('Contacts container found:', container);
+    } else {
+      container = document.getElementById(dataKey === 'projects' ? 'projects-list' : `${dataKey}-list`);
+    }
+    
     if (!container) {
-      console.error('Container not found for:', dataKey);
+      console.error('Container not found for:', type, 'dataKey:', dataKey);
       return;
     }
 
@@ -472,6 +483,9 @@ class AdminDashboard {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     
+    // Initialize current month/year
+    this.currentCalendarDate = new Date();
+    
     // Simple calendar implementation without external library
     this.renderSimpleCalendar();
   }
@@ -480,9 +494,9 @@ class AdminDashboard {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
     
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
+    const currentDate = this.currentCalendarDate || new Date();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
     
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
@@ -519,7 +533,7 @@ class AdminDashboard {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const hasEvents = this.hasEventsOnDate(date);
-      const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+      const isToday = day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
       
       calendarHTML += `
         <div class="calendar-day ${hasEvents ? 'has-events' : ''} ${isToday ? 'today' : ''}" 
@@ -582,12 +596,18 @@ class AdminDashboard {
   }
 
   previousMonth() {
-    // Implementation for previous month navigation
+    if (!this.currentCalendarDate) {
+      this.currentCalendarDate = new Date();
+    }
+    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() - 1);
     this.renderSimpleCalendar();
   }
 
   nextMonth() {
-    // Implementation for next month navigation
+    if (!this.currentCalendarDate) {
+      this.currentCalendarDate = new Date();
+    }
+    this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + 1);
     this.renderSimpleCalendar();
   }
 

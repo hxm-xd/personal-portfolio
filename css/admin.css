@@ -561,20 +561,21 @@ body {
 #calendar {
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
+  max-width: 350px;
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .calendar-header h3 {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-primary);
 }
@@ -583,10 +584,11 @@ body {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 0.5rem;
+  padding: 0.375rem;
   cursor: pointer;
   transition: var(--transition);
   color: var(--text-secondary);
+  font-size: 0.75rem;
 }
 
 .calendar-nav:hover {
@@ -607,10 +609,10 @@ body {
 }
 
 .calendar-weekdays > div {
-  padding: 0.75rem;
+  padding: 0.5rem 0.25rem;
   text-align: center;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
   background: var(--bg-tertiary);
 }
@@ -623,7 +625,7 @@ body {
 
 .calendar-day {
   aspect-ratio: 1;
-  padding: 0.5rem;
+  padding: 0.25rem;
   text-align: center;
   cursor: pointer;
   transition: var(--transition);
@@ -633,8 +635,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
+  min-height: 32px;
 }
 
 .calendar-day:hover {
@@ -668,11 +671,11 @@ body {
 
 .calendar-day.has-events .event-indicator {
   position: absolute;
-  bottom: 2px;
+  bottom: 1px;
   left: 50%;
   transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
   background: var(--primary);
   border-radius: 50%;
 }
