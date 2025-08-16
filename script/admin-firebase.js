@@ -374,39 +374,240 @@ class AdminDashboard {
   }
 
   loadOverviewData() {
-    const stats = {
-      tasks: this.data.tasks.length,
-      completedTasks: this.data.tasks.filter(t => t.status === 'completed').length,
-      academics: this.data.academics.length,
-      contacts: this.data.contacts.length,
-      projects: this.data.projects.length
-    };
-
-    // Update dashboard statistics
-    ['task-count', 'contact-count', 'deadline-count', 'view-count'].forEach((id, index) => {
-      const element = document.getElementById(id);
-      if (element) {
-        const values = [stats.tasks, stats.contacts, stats.tasks + stats.academics, '0'];
-        element.textContent = values[index];
-      }
-    });
+    // Update statistics
+    const taskCount = this.data.tasks.filter(task => task.status !== 'completed').length;
+    const contactCount = this.data.contacts.filter(contact => !contact.read).length;
+    const deadlineCount = this.data.tasks.filter(task => 
+      task.deadline && new Date(task.deadline) > new Date() && task.status !== 'completed'
+    ).length;
     
-    // Update portfolio statistics if they exist
-    if (this.data.portfolio.stats) {
-      const portfolioStats = this.data.portfolio.stats;
-      ['stats-experience', 'stats-projects', 'stats-technologies'].forEach(id => {
-        const element = document.getElementById(id);
-        if (element && portfolioStats[id.replace('stats-', '')]) {
-          element.value = portfolioStats[id.replace('stats-', '')];
-        }
-      });
-    }
+    document.getElementById('task-count').textContent = taskCount;
+    document.getElementById('contact-count').textContent = contactCount;
+    document.getElementById('deadline-count').textContent = deadlineCount;
     
-    // Update social media shortcuts
+    // Load portfolio settings to update social shortcuts
+    this.loadPortfolioSettings();
+    
+    // Update social shortcuts
     this.updateSocialShortcuts();
     
-    // Also refresh the portfolio settings display in the overview tab
-    this.loadPortfolioSettings();
+    // Load upcoming deadlines
+    this.loadUpcomingDeadlines();
+    
+    // Initialize calendar
+    this.initCalendar();
+  }
+
+  loadUpcomingDeadlines() {
+    const deadlinesList = document.getElementById('deadlines-list');
+    if (!deadlinesList) return;
+    
+    const upcoming = [...this.data.tasks, ...this.data.academics]
+      .filter(item => item.deadline && new Date(item.deadline) > new Date())
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+      .slice(0, 5);
+    
+    if (upcoming.length === 0) {
+      deadlinesList.innerHTML = '<p class="no-deadlines">No upcoming deadlines</p>';
+      return;
+    }
+    
+    deadlinesList.innerHTML = upcoming.map(item => `
+      <div class="deadline-item">
+        <div class="deadline-info">
+          <h4>${item.title || item.name}</h4>
+          <p>${item.description || ''}</p>
+        </div>
+        <div class="deadline-date">
+          <i class="fas fa-calendar"></i>
+          ${new Date(item.deadline).toLocaleDateString()}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  initCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    // Simple calendar implementation without external library
+    this.renderSimpleCalendar();
+  }
+
+  renderSimpleCalendar() {
+    const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    let calendarHTML = `
+      <div class="calendar-header">
+        <button onclick="adminDashboard.previousMonth()" class="calendar-nav">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <h3>${monthNames[month]} ${year}</h3>
+        <button onclick="adminDashboard.nextMonth()" class="calendar-nav">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+      <div class="calendar-grid">
+        <div class="calendar-weekdays">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div>
+          <div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+        <div class="calendar-days">
+    `;
+    
+    // Add empty cells for days before the first day of the month
+    for (let i = 0; i < startingDay; i++) {
+      calendarHTML += '<div class="calendar-day empty"></div>';
+    }
+    
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const hasEvents = this.hasEventsOnDate(date);
+      const isToday = day === now.getDate() && month === now.getMonth() && year === now.getFullYear();
+      
+      calendarHTML += `
+        <div class="calendar-day ${hasEvents ? 'has-events' : ''} ${isToday ? 'today' : ''}" 
+             onclick="adminDashboard.showDayEvents(${year}, ${month}, ${day})">
+          ${day}
+          ${hasEvents ? '<div class="event-indicator"></div>' : ''}
+        </div>
+      `;
+    }
+    
+    calendarHTML += '</div></div>';
+    calendarEl.innerHTML = calendarHTML;
+  }
+
+  hasEventsOnDate(date) {
+    const dateStr = date.toISOString().split('T')[0];
+    return [...this.data.tasks, ...this.data.academics].some(item => 
+      item.deadline && item.deadline.split('T')[0] === dateStr
+    );
+  }
+
+  showDayEvents(year, month, day) {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split('T')[0];
+    const events = [...this.data.tasks, ...this.data.academics].filter(item => 
+      item.deadline && item.deadline.split('T')[0] === dateStr
+    );
+    
+    if (events.length === 0) {
+      this.showNotification('No events on this date', 'info');
+      return;
+    }
+    
+    const eventList = events.map(event => `
+      <div class="event-item">
+        <h4>${event.title || event.name}</h4>
+        <p>${event.description || ''}</p>
+        <span class="event-type">${event.status || 'Deadline'}</span>
+      </div>
+    `).join('');
+    
+    // Create a simple modal to show events
+    const modal = document.createElement('div');
+    modal.className = 'event-modal';
+    modal.innerHTML = `
+      <div class="event-modal-content">
+        <div class="event-modal-header">
+          <h3>Events on ${date.toLocaleDateString()}</h3>
+          <button onclick="this.closest('.event-modal').remove()" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="event-modal-body">
+          ${eventList}
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  }
+
+  previousMonth() {
+    // Implementation for previous month navigation
+    this.renderSimpleCalendar();
+  }
+
+  nextMonth() {
+    // Implementation for next month navigation
+    this.renderSimpleCalendar();
+  }
+
+  searchTasks() {
+    const searchTerm = document.getElementById('task-search').value.toLowerCase();
+    const tasks = this.data.tasks.filter(task => 
+      task.title.toLowerCase().includes(searchTerm) ||
+      task.description.toLowerCase().includes(searchTerm)
+    );
+    
+    this.renderFilteredTasks(tasks);
+  }
+
+  filterTasks() {
+    const filterValue = document.getElementById('task-filter').value;
+    let filteredTasks = this.data.tasks;
+    
+    if (filterValue !== 'all') {
+      filteredTasks = this.data.tasks.filter(task => task.status === filterValue);
+    }
+    
+    this.renderFilteredTasks(filteredTasks);
+  }
+
+  renderFilteredTasks(tasks) {
+    const container = document.getElementById('tasks-list');
+    if (!container) return;
+    
+    if (tasks.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <i class="fas fa-tasks"></i>
+          <h3>No tasks found</h3>
+          <p>Try adjusting your search or filter criteria.</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = tasks.map(task => {
+      const statusClass = task.status ? `status-${task.status}` : '';
+      const statusText = task.status ? task.status.replace('-', ' ') : '';
+      
+      return `
+        <div class="item-card ${statusClass}">
+          <div class="item-content">
+            <h4 class="item-title">${task.title}</h4>
+            <p class="item-description">${task.description || ''}</p>
+            ${task.status ? `<span class="status-badge">${statusText}</span>` : ''}
+            ${task.deadline ? `<span class="deadline">Due: ${new Date(task.deadline).toLocaleDateString()}</span>` : ''}
+          </div>
+          <div class="item-actions">
+            <button onclick="editItem('task', '${task.id}')" class="btn-secondary">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button onclick="deleteItem('task', '${task.id}')" class="btn-danger">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
   }
 
   openModal(type) {
@@ -1167,5 +1368,18 @@ async function forceUpdatePortfolio() {
     }, 3000);
     
     adminDashboard.showNotification('Failed to update portfolio: ' + error.message, 'error');
+  }
+}
+
+// Global functions for search and filter
+function searchTasks() {
+  if (adminDashboard) {
+    adminDashboard.searchTasks();
+  }
+}
+
+function filterTasks() {
+  if (adminDashboard) {
+    adminDashboard.filterTasks();
   }
 }
