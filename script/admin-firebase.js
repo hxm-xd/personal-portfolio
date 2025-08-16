@@ -367,11 +367,15 @@ class AdminDashboard {
         return `
           <div class="item-card ${readClass}">
             <div class="item-content">
-              <h4 class="item-title">${item.name}</h4>
+              <div class="contact-header">
+                <h4 class="item-title">${item.name}</h4>
+                ${!item.read ? '<span class="status-badge unread">New</span>' : ''}
+              </div>
               <p class="item-email">${item.email}</p>
-              <p class="item-description">${item.message}</p>
+              <div class="message-container">
+                <p class="item-description">${item.message}</p>
+              </div>
               <span class="timestamp">${new Date(item.timestamp).toLocaleString()}</span>
-              ${!item.read ? '<span class="status-badge unread">New</span>' : ''}
             </div>
             <div class="item-actions">
               <button onclick="markAsRead('${item.id}')" class="btn-secondary" title="Mark as read">
