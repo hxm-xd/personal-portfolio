@@ -248,17 +248,29 @@ class AdminDashboard {
       const userId = this.user.uid;
       const batch = window.db.batch();
 
+      // Clean data function
+      const cleanData = (obj) => {
+        if (!obj) return {};
+        const cleaned = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            cleaned[key] = obj[key];
+          }
+        });
+        return cleaned;
+      };
+
       // Save collections
       ['tasks', 'academics', 'contacts', 'projects'].forEach(collection => {
         this.data[collection].forEach(item => {
           const docRef = window.db.collection('users').doc(userId).collection(collection).doc(item.id);
-          batch.set(docRef, item);
+          batch.set(docRef, cleanData(item));
         });
       });
 
-      // Save documents
-      batch.set(window.db.collection('users').doc(userId).collection('settings').doc('main'), this.data.settings);
-      batch.set(window.db.collection('users').doc(userId).collection('portfolio').doc('main'), this.data.portfolio);
+      // Save documents with cleaned data
+      batch.set(window.db.collection('users').doc(userId).collection('settings').doc('main'), cleanData(this.data.settings));
+      batch.set(window.db.collection('users').doc(userId).collection('portfolio').doc('main'), cleanData(this.data.portfolio));
 
       await batch.commit();
       this.showNotification('Data saved successfully!', 'success');
