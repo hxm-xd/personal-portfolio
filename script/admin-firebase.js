@@ -274,6 +274,9 @@ class AdminDashboard {
 
       await batch.commit();
       this.showNotification('Data saved successfully!', 'success');
+      
+      // Also update public portfolio when data is saved
+      await this.saveToPublicPortfolio();
     } catch (error) {
       console.error('Error saving data:', error);
       this.showNotification('Error saving data: ' + error.message, 'error');
@@ -610,6 +613,16 @@ class AdminDashboard {
     
     // Load skills
     this.loadSkills();
+    
+    // Update last update time
+    const lastUpdateElement = document.getElementById('last-update-time');
+    if (lastUpdateElement) {
+      if (portfolio.lastUpdated) {
+        lastUpdateElement.textContent = new Date(portfolio.lastUpdated).toLocaleString();
+      } else {
+        lastUpdateElement.textContent = 'Never';
+      }
+    }
   }
   
   loadSkills() {
@@ -757,6 +770,8 @@ class AdminDashboard {
 
   async saveToPublicPortfolio() {
     try {
+      console.log('Saving to public portfolio...', this.data.portfolio);
+      
       // Clean data to remove undefined values
       const cleanData = (obj) => {
         if (!obj) return {};
@@ -769,7 +784,8 @@ class AdminDashboard {
         return cleaned;
       };
 
-      await window.db.collection('public').doc('portfolio').set({
+      // Save main portfolio data
+      const portfolioData = {
         profile: cleanData(this.data.portfolio.profile),
         social: cleanData(this.data.portfolio.social),
         stats: cleanData(this.data.portfolio.stats),
@@ -777,7 +793,11 @@ class AdminDashboard {
         skills: cleanData(this.data.portfolio.skills),
         profileImage: this.data.portfolio.profileImage || '',
         lastUpdated: new Date().toISOString()
-      }, { merge: true });
+      };
+
+      console.log('Portfolio data to save:', portfolioData);
+
+      await window.db.collection('public').doc('portfolio').set(portfolioData, { merge: true });
       
       // Save projects to public location
       const projectsRef = window.db.collection('public').doc('portfolio').collection('projects');
@@ -788,8 +808,13 @@ class AdminDashboard {
       await Promise.all(deletePromises);
       
       // Add current projects
-      const addPromises = this.data.projects.map(project => projectsRef.add(project));
-      await Promise.all(addPromises);
+      if (this.data.projects && this.data.projects.length > 0) {
+        const addPromises = this.data.projects.map(project => projectsRef.add(project));
+        await Promise.all(addPromises);
+      }
+      
+      console.log('Public portfolio updated successfully!');
+      this.showNotification('Portfolio updated successfully!', 'success');
     } catch (error) {
       console.error('Error saving to public portfolio:', error);
       this.showNotification('Error saving to public portfolio: ' + error.message, 'error');
@@ -953,5 +978,39 @@ function clearData() {
     adminDashboard.saveData();
     adminDashboard.renderAllData();
     adminDashboard.showNotification('All data cleared!', 'success');
+  }
+}
+
+async function forceUpdatePortfolio() {
+  try {
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    
+    await adminDashboard.saveToPublicPortfolio();
+    
+    // Update the last update time
+    const lastUpdateElement = document.getElementById('last-update-time');
+    if (lastUpdateElement) {
+      lastUpdateElement.textContent = new Date().toLocaleString();
+    }
+    
+    button.innerHTML = '<i class="fas fa-check"></i> Updated Successfully!';
+    setTimeout(() => {
+      button.disabled = false;
+      button.innerHTML = originalText;
+    }, 2000);
+    
+  } catch (error) {
+    const button = event.target.closest('button');
+    button.disabled = false;
+    button.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Update Failed';
+    setTimeout(() => {
+      button.innerHTML = '<i class="fas fa-sync-alt"></i> Force Update Portfolio';
+    }, 3000);
+    
+    adminDashboard.showNotification('Failed to update portfolio: ' + error.message, 'error');
   }
 }
