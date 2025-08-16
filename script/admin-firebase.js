@@ -407,10 +407,13 @@ class AdminDashboard {
   }
 
   openModal(type) {
+    console.log('openModal called with type:', type);
     this.editId = null;
     const modal = document.getElementById('modal');
     const modalTitle = document.getElementById('modal-title');
     const modalFields = document.getElementById('modal-fields');
+    
+    console.log('Modal elements found:', { modal, modalTitle, modalFields });
     
     modalTitle.textContent = `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
     
@@ -919,7 +922,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // Global functions for HTML onclick handlers
 function switchTab(tab) { adminDashboard.switchTab(tab); }
 function logout() { adminDashboard.logout(); }
-function openModal(type) { adminDashboard.openModal(type); }
+function openModal(type) { 
+  console.log('Global openModal called with type:', type);
+  if (adminDashboard) {
+    adminDashboard.openModal(type);
+  } else {
+    console.error('adminDashboard not initialized');
+  }
+}
 function closeModal() { adminDashboard.closeModal(); }
 function editItem(type, id) { adminDashboard.editItem(type, id); }
 function deleteItem(type, id) { adminDashboard.deleteItem(type, id); }
