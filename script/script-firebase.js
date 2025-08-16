@@ -1,9 +1,18 @@
 // Simplified Portfolio Script with Firebase Integration
 document.addEventListener("DOMContentLoaded", () => {
   trackPortfolioView();
-  loadProjectsFromFirebase();
-  loadPortfolioSettingsFromFirebase();
   setupProfileImage();
+  
+  // Wait for Firebase to be ready
+  if (window.db) {
+    loadProjectsFromFirebase();
+    loadPortfolioSettingsFromFirebase();
+  } else {
+    window.addEventListener('firebaseReady', () => {
+      loadProjectsFromFirebase();
+      loadPortfolioSettingsFromFirebase();
+    });
+  }
 });
 
 // Track portfolio views
@@ -28,7 +37,7 @@ async function loadProjectsFromFirebase() {
     `;
 
     // Get projects from Firestore (public collection)
-    const projectsSnapshot = await db.collection('public').doc('portfolio').collection('projects').get();
+    const projectsSnapshot = await window.db.collection('public').doc('portfolio').collection('projects').get();
     const projects = projectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       if (projects.length === 0) {
@@ -48,7 +57,7 @@ async function loadProjectsFromFirebase() {
 async function loadPortfolioSettingsFromFirebase() {
   try {
     console.log('Loading portfolio settings from Firebase...');
-    const portfolioDoc = await db.collection('public').doc('portfolio').get();
+    const portfolioDoc = await window.db.collection('public').doc('portfolio').get();
     const portfolio = portfolioDoc.exists ? portfolioDoc.data() : {};
     console.log('Portfolio data loaded:', portfolio);
 
@@ -259,7 +268,7 @@ async function sendMessage(event) {
 
   try {
     // Save to Firebase
-    await db.collection('public').doc('portfolio').collection('contacts').add(message);
+    await window.db.collection('public').doc('portfolio').collection('contacts').add(message);
     
     // Show success notification
     showNotification('Message sent successfully! Thank you for reaching out.', 'success');
