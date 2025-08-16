@@ -26,7 +26,7 @@ function loadProjectsFromAdmin() {
         description: 'A comprehensive IoT system for home automation using Arduino and ESP32. Features include smart lighting, temperature monitoring, and security alerts.',
         technologies: 'Arduino, ESP32, C++, Firebase',
         url: '#',
-        image: '../assets/robot1.jpg'
+        image: 'https://via.placeholder.com/400x300/6366f1/ffffff?text=IoT+Project'
       },
       {
         id: '2',
@@ -34,7 +34,7 @@ function loadProjectsFromAdmin() {
         description: 'A modern e-commerce mobile application built with Flutter and Firebase. Includes user authentication, product catalog, and payment integration.',
         technologies: 'Flutter, Firebase, Dart, Stripe',
         url: '#',
-        image: '../assets/robot2.jpg'
+        image: 'https://via.placeholder.com/400x300/10b981/ffffff?text=Mobile+App'
       },
       {
         id: '3',
@@ -42,7 +42,7 @@ function loadProjectsFromAdmin() {
         description: 'An intelligent chatbot using Python and natural language processing. Can handle customer inquiries and provide automated responses.',
         technologies: 'Python, NLP, TensorFlow, Flask',
         url: '#',
-        image: '../assets/robot3.jpg'
+        image: 'https://via.placeholder.com/400x300/f59e0b/ffffff?text=Portfolio'
       }
     ];
     

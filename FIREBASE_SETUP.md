@@ -46,7 +46,55 @@ This guide will help you set up Firebase to enable cloud-based data storage for 
 4. **Select a location** (same as Firestore)
 5. **Click "Done"**
 
-## Step 6: Get Firebase Configuration
+## Step 6: Configure Security Rules
+
+### Firestore Security Rules
+
+1. **Go to "Firestore Database" → "Rules"**
+2. **Replace the default rules with:**
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read/write their own data
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow public read access to portfolio data
+    match /public/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
+```
+
+### Storage Security Rules
+
+1. **Go to "Storage" → "Rules"**
+2. **Replace the default rules with:**
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to upload profile images
+    match /profile-images/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow public read access to all files
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+  }
+}
+```
+
+## Step 7: Get Firebase Configuration
 
 1. **Go to "Project settings"** (gear icon)
 2. **Scroll down to "Your apps"**
@@ -55,7 +103,7 @@ This guide will help you set up Firebase to enable cloud-based data storage for 
 5. **Click "Register app"**
 6. **Copy the configuration object**
 
-## Step 7: Update Configuration Files
+## Step 8: Update Configuration Files
 
 ### Update `firebase-config.js`:
 
@@ -72,7 +120,7 @@ const firebaseConfig = {
 };
 ```
 
-## Step 8: Update HTML Files
+## Step 9: Update HTML Files
 
 ### Update `index.html`:
 
@@ -107,54 +155,8 @@ Add Firebase SDK and update script references:
 <script src="../firebase-config.js"></script>
 
 <!-- Your Scripts -->
-<script src="../script/admin-firebase.js" defer></script>
+<script src="../script/admin-firebase.js"></script>
 ```
-
-## Step 9: Set Up Firestore Security Rules
-
-In Firebase Console, go to Firestore Database → Rules and update with:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only access their own data
-    match /users/{userId}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Public portfolio data (read-only for everyone)
-    match /public/portfolio/{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
-    }
-  }
-}
-```
-
-## Step 10: Set Up Storage Security Rules
-
-In Firebase Console, go to Storage → Rules and update with:
-
-```javascript
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    // Users can only access their own files
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
-
-## Step 11: Test the Setup
-
-1. **Open your portfolio in a browser**
-2. **Go to the admin dashboard**
-3. **Login with your Firebase credentials**
-4. **Try adding some data**
-5. **Check if it appears on the public portfolio**
 
 ## Database Structure
 
@@ -167,9 +169,8 @@ users/
       {taskId}/
         title: string
         description: string
-        priority: string
-        deadline: timestamp
         status: string
+        deadline: timestamp
         createdAt: timestamp
         updatedAt: timestamp
 
@@ -178,8 +179,6 @@ users/
         title: string
         description: string
         deadline: timestamp
-        priority: string
-        status: string
         createdAt: timestamp
         updatedAt: timestamp
 
@@ -256,8 +255,9 @@ public/
 
 3. **"Storage permission denied"**
 
-   - Check Storage security rules
+   - Check Storage security rules (see Step 6 above)
    - Verify user authentication
+   - Ensure Storage is enabled in Firebase Console
 
 4. **"Network error"**
    - Check internet connection

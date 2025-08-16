@@ -1,4 +1,4 @@
-// Portfolio Script with Firebase Integration
+// Simplified Portfolio Script with Firebase Integration
 document.addEventListener("DOMContentLoaded", () => {
   trackPortfolioView();
   loadProjectsFromFirebase();
@@ -198,21 +198,21 @@ function getSampleProjects() {
       title: "Smart Home IoT System",
       description: "A comprehensive IoT solution for home automation using ESP32 and mobile app control.",
       technologies: "ESP32, Flutter, Firebase, IoT",
-      image: "assets/robot1.jpg",
+      image: "https://via.placeholder.com/400x300/6366f1/ffffff?text=IoT+Project",
       url: "#"
     },
     {
       title: "E-Commerce Mobile App",
       description: "Cross-platform mobile application for online shopping with payment integration.",
       technologies: "Flutter, Dart, Firebase, Stripe",
-      image: "assets/robot2.jpg",
+      image: "https://via.placeholder.com/400x300/10b981/ffffff?text=Mobile+App",
       url: "#"
     },
     {
       title: "Portfolio Website",
       description: "Modern responsive portfolio website with admin dashboard and dynamic content management.",
       technologies: "HTML5, CSS3, JavaScript, Firebase",
-      image: "assets/robot3.jpg",
+      image: "https://via.placeholder.com/400x300/f59e0b/ffffff?text=Portfolio",
       url: "#"
     }
   ];
@@ -246,6 +246,7 @@ function updateSkills(skills) {
       if (container) {
         container.innerHTML = skills[categoryKey].map(skill => `
           <div class="skill-item">
+            <i class="fas fa-check-circle"></i>
             <span class="skill-name">${skill.name}</span>
             <span class="skill-level">${skill.level}</span>
           </div>

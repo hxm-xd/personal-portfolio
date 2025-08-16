@@ -1,418 +1,114 @@
-// Admin Dashboard with Firebase Integration
-class AdminDashboardFirebase {
+// Simplified Admin Dashboard with Firebase Integration
+class AdminDashboard {
   constructor() {
     this.currentTab = 'overview';
     this.editId = null;
-    this.calendar = null;
     this.user = null;
-    
-    // Initialize data structure
     this.data = {
-      tasks: [],
-      academics: [],
-      contacts: [],
-      projects: [],
-      settings: {},
-      portfolio: {}
+      tasks: [], academics: [], contacts: [], projects: [],
+      settings: {}, portfolio: {}
     };
     
-    console.log('AdminDashboardFirebase constructor called');
-    // Add a small delay to ensure DOM is ready
-    setTimeout(() => {
-      this.init();
-    }, 100);
+    setTimeout(() => this.init(), 100);
   }
 
   async init() {
-    console.log('Initializing admin dashboard...');
-    
-    // Check if DOM elements exist before proceeding
-    if (!this.checkDOMElements()) {
-      console.error('Required DOM elements not found, retrying in 500ms...');
-      setTimeout(() => {
-        this.init();
-      }, 500);
+    if (!this.checkDOM()) {
+      setTimeout(() => this.init(), 500);
       return;
     }
     
-    this.setupEventListeners();
+    this.setupEvents();
     await this.checkAuth();
     this.showNotification('Welcome to Admin Dashboard!', 'success');
   }
 
-  checkDOMElements() {
-    const requiredElements = [
-      'login-form',
-      'login-screen',
-      'admin-dashboard',
-      'email',
-      'password'
-    ];
-    
-    for (const elementId of requiredElements) {
-      const element = document.getElementById(elementId);
-      if (!element) {
-        console.error(`Required element not found: ${elementId}`);
-        return false;
-      }
-    }
-    
-    console.log('All required DOM elements found');
-    return true;
+  checkDOM() {
+    const required = ['login-form', 'login-screen', 'admin-dashboard', 'email', 'password'];
+    return required.every(id => document.getElementById(id));
   }
 
-  setupEventListeners() {
-    console.log('Setting up event listeners...');
-    
+  setupEvents() {
     // Tab navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const tab = e.target.closest('.nav-btn').getAttribute('data-tab');
-        this.switchTab(tab);
+        this.switchTab(e.target.closest('.nav-btn').getAttribute('data-tab'));
       });
     });
 
-    // Form submissions
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
+    // Forms
+    document.getElementById('login-form')?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.login();
+    });
+
+    document.querySelector('.logout-btn')?.addEventListener('click', () => this.logout());
+
+    // Portfolio forms
+    ['profile-form', 'social-form', 'stats-form', 'contact-info-form', 'password-form'].forEach(formId => {
+      document.getElementById(formId)?.addEventListener('submit', (e) => {
         e.preventDefault();
-        console.log('Login form submitted');
-        this.login();
+        this.handleFormSubmit(formId);
       });
-      console.log('Login form event listener added');
-    } else {
-      console.error('Login form not found!');
-    }
+    });
 
-    // Logout
-    const logoutBtn = document.querySelector('.logout-btn');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => {
-        this.logout();
-      });
-      console.log('Logout button event listener added');
-    } else {
-      console.log('Logout button not found (normal if not logged in)');
-    }
+    // Profile image upload
+    document.getElementById('profile-image-input')?.addEventListener('change', (e) => {
+      this.handleProfileImageUpload(e.target.files[0]);
+    });
 
-    // Setup network status monitoring
     this.setupNetworkMonitoring();
   }
 
   setupNetworkMonitoring() {
-    // Update network status on page load
     this.updateNetworkStatus();
     
-    // Listen for online/offline events
     window.addEventListener('online', () => {
-      console.log('Browser went online');
       this.updateNetworkStatus();
       this.showNotification('Connection restored!', 'success');
-      
-      // Try to reload data when connection is restored
-      if (this.user) {
-        setTimeout(() => {
-          this.loadData();
-        }, 2000); // Wait 2 seconds before retrying
-      }
+      if (this.user) setTimeout(() => this.loadData(), 2000);
     });
     
     window.addEventListener('offline', () => {
-      console.log('Browser went offline');
       this.updateNetworkStatus();
       this.showNotification('You are now offline. Some features may be limited.', 'warning');
     });
-    
-    // Monitor Firebase connection status
-    if (typeof window.db !== 'undefined') {
-      console.log('Firebase db available, setting up connection monitoring');
-      // Test connection periodically
-      this.testFirebaseConnection();
-    } else {
-      console.warn('Firebase db not available yet, will retry later');
-      // Retry after a delay
-      setTimeout(() => {
-        if (typeof window.db !== 'undefined') {
-          this.setupNetworkMonitoring();
-        }
-      }, 1000);
-    }
   }
 
-  async testFirebaseConnection() {
-    try {
-      // Test connection every 30 seconds
-      setInterval(async () => {
-        if (navigator.onLine) {
-          try {
-            await window.db.collection('users').limit(1).get();
-            this.updateNetworkStatus('online');
-          } catch (error) {
-            console.warn('Firebase connection test failed:', error.message);
-            if (error.code === 'unavailable') {
-              this.updateNetworkStatus('firebase-error');
-            }
-          }
-        }
-      }, 30000); // 30 seconds
-    } catch (error) {
-      console.error('Error setting up Firebase connection test:', error);
-    }
-  }
-
-  updateNetworkStatus(status = 'auto') {
-    const networkStatus = document.getElementById('network-status');
-    const networkText = document.getElementById('network-text');
-    const networkIcon = networkStatus?.querySelector('i');
+  updateNetworkStatus() {
+    const status = document.getElementById('network-status');
+    const text = document.getElementById('network-text');
+    const icon = status?.querySelector('i');
     const retryBtn = document.getElementById('retry-connection');
     
-    if (!networkStatus || !networkText || !networkIcon) {
-      console.warn('Network status elements not found');
-      return;
-    }
+    if (!status || !text || !icon) return;
     
-    let newStatus = status;
-    let newText = 'Online';
-    let newIcon = 'fas fa-wifi';
-    let newClass = '';
-    let showRetry = false;
+    const isOnline = navigator.onLine;
+    const newText = isOnline ? 'Online' : 'Offline';
+    const newIcon = isOnline ? 'fas fa-wifi' : 'fas fa-wifi-slash';
+    const newClass = isOnline ? '' : 'danger';
     
-    if (status === 'auto') {
-      if (!navigator.onLine) {
-        newStatus = 'offline';
-      } else {
-        newStatus = 'online';
-      }
-    }
-    
-    switch (newStatus) {
-      case 'online':
-        newText = 'Online';
-        newIcon = 'fas fa-wifi';
-        newClass = '';
-        showRetry = false;
-        break;
-      case 'offline':
-        newText = 'Offline';
-        newIcon = 'fas fa-wifi-slash';
-        newClass = 'danger';
-        showRetry = true;
-        break;
-      case 'firebase-error':
-        newText = 'Firebase Error';
-        newIcon = 'fas fa-exclamation-triangle';
-        newClass = 'warning';
-        showRetry = true;
-        break;
-      case 'slow':
-        newText = 'Slow Connection';
-        newIcon = 'fas fa-wifi';
-        newClass = 'warning';
-        showRetry = false;
-        break;
-    }
-    
-    // Update the elements
-    networkText.textContent = newText;
-    networkIcon.className = newIcon;
-    
-    // Update classes
-    networkStatus.className = `network-status ${newClass}`.trim();
-    
-    // Show/hide retry button
-    if (retryBtn) {
-      retryBtn.style.display = showRetry ? 'flex' : 'none';
-    }
-    
-    console.log(`Network status updated to: ${newStatus}`);
-  }
-
-  async retryConnection() {
-    console.log('Manual retry connection requested');
-    this.showNotification('Retrying connection...', 'info');
-    
-    try {
-      // Test connection
-      await window.db.collection('users').limit(1).get();
-      console.log('Connection test successful');
-      
-      this.updateNetworkStatus('online');
-      this.showNotification('Connection restored!', 'success');
-      
-      // Reload data
-      if (this.user) {
-        await this.loadData();
-      }
-    } catch (error) {
-      console.error('Retry failed:', error);
-      this.updateNetworkStatus('firebase-error');
-      this.showNotification('Retry failed: ' + error.message, 'error');
-    }
-  }
-
-  async runDiagnostics() {
-    console.log('Running Firebase diagnostics...');
-    const diagnostics = {
-      timestamp: new Date().toISOString(),
-      browser: navigator.userAgent,
-      online: navigator.onLine,
-      firebaseConfig: {
-        projectId: window.db._delegate._databaseId.projectId,
-        databaseId: window.db._delegate._databaseId.databaseId
-      },
-      tests: {}
-    };
-
-    // Test 1: Basic connectivity
-    try {
-      await window.db.collection('_test').doc('diagnostic').get();
-      diagnostics.tests.basicConnectivity = { success: true, error: null };
-    } catch (error) {
-      diagnostics.tests.basicConnectivity = { success: false, error: error.message, code: error.code };
-    }
-
-    // Test 2: Network status
-    try {
-      // Simple connectivity test instead of enableNetwork
-      await window.db.collection('users').limit(1).get();
-      diagnostics.tests.networkStatus = { success: true, error: null };
-    } catch (error) {
-      diagnostics.tests.networkStatus = { success: false, error: error.message };
-    }
-
-    // Test 3: Authentication status
-    try {
-      const user = window.auth.currentUser;
-      diagnostics.tests.authStatus = { 
-        success: true, 
-        authenticated: !!user, 
-        userId: user?.uid || null,
-        error: null 
-      };
-    } catch (error) {
-      diagnostics.tests.authStatus = { success: false, error: error.message };
-    }
-
-    console.log('Diagnostics results:', diagnostics);
-    
-    // Show results to user
-    const results = Object.entries(diagnostics.tests)
-      .map(([test, result]) => `${test}: ${result.success ? '✅' : '❌'} ${result.error || ''}`)
-      .join('\n');
-    
-    this.showNotification(`Diagnostics complete. Check console for details.`, 'info');
-    
-    return diagnostics;
-  }
-
-  setupPortfolioForms() {
-    console.log('Setting up portfolio forms...');
-    
-    // Profile form
-    const profileForm = document.getElementById('profile-form');
-    if (profileForm) {
-      console.log('Profile form found, adding event listener');
-      profileForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Profile form submitted');
-        this.saveProfileInfo();
-      });
-    } else {
-      console.error('Profile form not found!');
-    }
-
-    // Social links form
-    const socialForm = document.getElementById('social-form');
-    if (socialForm) {
-      console.log('Social form found, adding event listener');
-      socialForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Social form submitted');
-        this.saveSocialLinks();
-      });
-    } else {
-      console.error('Social form not found!');
-    }
-
-    // Statistics form
-    const statsForm = document.getElementById('stats-form');
-    if (statsForm) {
-      console.log('Stats form found, adding event listener');
-      statsForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Stats form submitted');
-        this.saveStatistics();
-      });
-    } else {
-      console.error('Stats form not found!');
-    }
-
-    // Contact info form
-    const contactInfoForm = document.getElementById('contact-info-form');
-    if (contactInfoForm) {
-      console.log('Contact info form found, adding event listener');
-      contactInfoForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Contact info form submitted');
-        this.saveContactInfo();
-      });
-    } else {
-      console.error('Contact info form not found!');
-    }
-
-    // Password form
-    const passwordForm = document.getElementById('password-form');
-    if (passwordForm) {
-      console.log('Password form found, adding event listener');
-      passwordForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        console.log('Password form submitted');
-        this.changePassword();
-      });
-    } else {
-      console.error('Password form not found!');
-    }
-
-    // Profile image upload
-    const profileImageInput = document.getElementById('profile-image-input');
-    if (profileImageInput) {
-      console.log('Profile image input found, adding event listener');
-      profileImageInput.addEventListener('change', (e) => {
-        console.log('Profile image selected:', e.target.files[0]);
-        this.handleProfileImageUpload(e.target.files[0]);
-      });
-    } else {
-      console.error('Profile image input not found!');
-    }
-    
-    console.log('Portfolio forms setup complete');
+    text.textContent = newText;
+    icon.className = newIcon;
+    status.className = `network-status ${newClass}`.trim();
+    if (retryBtn) retryBtn.style.display = isOnline ? 'none' : 'flex';
   }
 
   async checkAuth() {
-    console.log('Checking authentication...');
-    
-    // Wait for Firebase to be ready
     if (typeof window.auth === 'undefined') {
-      console.log('Waiting for Firebase to be ready...');
-      
-      // Listen for Firebase ready event
-      await new Promise((resolve) => {
+      await new Promise(resolve => {
         const handleFirebaseReady = () => {
           window.removeEventListener('firebaseReady', handleFirebaseReady);
           resolve();
         };
         
-        // Check if Firebase is already ready
         if (typeof window.auth !== 'undefined') {
           resolve();
           return;
         }
         
         window.addEventListener('firebaseReady', handleFirebaseReady);
-        
-        // Fallback timeout after 10 seconds
         setTimeout(() => {
           window.removeEventListener('firebaseReady', handleFirebaseReady);
           resolve();
@@ -420,41 +116,24 @@ class AdminDashboardFirebase {
       });
     }
     
-    // Check if Firebase auth is available
     if (typeof window.auth === 'undefined') {
-      console.error('Firebase auth is not available after waiting!');
       this.showNotification('Firebase not initialized properly. Please refresh the page.', 'error');
       return;
     }
     
-    console.log('Firebase auth is ready, setting up auth state listener...');
-    
-    // Check if we're online
-    if (!navigator.onLine) {
-      console.warn('Browser is offline');
-      this.showNotification('You appear to be offline. Please check your internet connection.', 'warning');
-    }
-    
     window.auth.onAuthStateChanged(async (user) => {
-      console.log('Auth state changed:', user ? 'User logged in' : 'No user');
       if (user) {
         this.user = user;
-        console.log('User authenticated:', user.email);
         this.showDashboard();
         await this.loadData();
       } else {
-        console.log('No user, showing login screen');
         this.showLogin();
       }
     });
   }
 
   async login() {
-    console.log('Login method called');
-    
-    // Ensure Firebase auth is ready
     if (typeof window.auth === 'undefined') {
-      console.error('Firebase auth is not available!');
       this.showNotification('Firebase not ready. Please refresh the page.', 'error');
       return;
     }
@@ -464,20 +143,13 @@ class AdminDashboardFirebase {
     const errorEl = document.getElementById('login-error');
     const button = document.querySelector('#login-form button');
 
-    console.log('Attempting login with email:', email);
-
     try {
       button.disabled = true;
       button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-
-      console.log('Calling Firebase auth.signInWithEmailAndPassword...');
       await window.auth.signInWithEmailAndPassword(email, password);
-      console.log('Login successful!');
-      
       errorEl.style.display = 'none';
       this.showNotification('Login successful!', 'success');
     } catch (error) {
-      console.error('Login error:', error);
       errorEl.textContent = error.message;
       errorEl.style.display = 'block';
       this.showNotification('Login failed: ' + error.message, 'error');
@@ -496,158 +168,42 @@ class AdminDashboardFirebase {
     }
   }
 
-  async forceLogout() {
-    try {
-      await window.auth.signOut();
-      this.showNotification('Force logged out successfully', 'info');
-    } catch (error) {
-      this.showNotification('Force logout error: ' + error.message, 'error');
-    }
-  }
-
   showLogin() {
-    console.log('Showing login screen');
-    const loginScreen = document.getElementById('login-screen');
-    const dashboard = document.getElementById('admin-dashboard');
-    
-    if (loginScreen) loginScreen.style.display = 'flex';
-    if (dashboard) dashboard.style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('admin-dashboard').style.display = 'none';
   }
 
   showDashboard() {
-    console.log('Showing dashboard');
-    const loginScreen = document.getElementById('login-screen');
-    const dashboard = document.getElementById('admin-dashboard');
-    
-    if (loginScreen) loginScreen.style.display = 'none';
-    if (dashboard) dashboard.style.display = 'block';
-    
-    // Setup portfolio forms after dashboard is shown
-    setTimeout(() => {
-      this.setupPortfolioForms();
-    }, 100);
-    
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-dashboard').style.display = 'block';
+    setTimeout(() => this.setupPortfolioForms(), 100);
     this.switchTab('overview');
   }
 
   async loadData() {
     try {
-      console.log('Loading data from Firestore...');
-      
-      // Ensure Firebase is ready
       if (typeof window.db === 'undefined') {
-        console.error('Firebase db is not available!');
         this.showNotification('Firebase not ready. Please refresh the page.', 'error');
         return;
       }
       
-      console.log('Firestore project:', window.db._delegate._databaseId.projectId);
       const userId = this.user.uid;
-      console.log('User ID:', userId);
       
-      // Check if we're online
-      if (!navigator.onLine) {
-        console.warn('Browser is offline, will try to load cached data');
-        this.showNotification('You are offline. Loading cached data if available.', 'warning');
-        this.updateNetworkStatus('offline');
-      }
-      
-      // Test basic Firestore connection first
-      console.log('Testing basic Firestore connection...');
-      let connectionSuccessful = false;
-      
-      try {
-        // Try a simple collection list instead of a specific document
-        await window.db.collection('users').limit(1).get();
-        console.log('Basic Firestore connection successful');
-        connectionSuccessful = true;
-        this.updateNetworkStatus('online');
-      } catch (connectionError) {
-        console.error('Basic connection failed:', connectionError);
-        console.error('Connection error details:', connectionError.code, connectionError.message);
-        
-        // If it's a permissions error, that's actually good - it means we can connect
-        if (connectionError.code === 'permission-denied') {
-          console.log('Connection successful (permission denied is expected for empty collection)');
-          connectionSuccessful = true;
-          this.updateNetworkStatus('online');
-        } else if (connectionError.code === 'unavailable') {
-          console.warn('Firebase is unavailable');
-          this.updateNetworkStatus('firebase-error');
-          this.showNotification('Firebase is temporarily unavailable.', 'warning');
-        } else {
-          this.updateNetworkStatus('firebase-error');
-          this.showNotification('Firebase connection error: ' + connectionError.message, 'error');
-        }
-      }
-      
-      // Test user-specific connection
-      console.log('Testing user-specific connection...');
-      try {
-        await window.db.collection('users').doc(userId).get();
-        console.log('User-specific connection successful');
-      } catch (userError) {
-        console.error('User connection failed:', userError);
-        // This might be normal if user document doesn't exist yet
-        console.log('User document might not exist yet, continuing...');
-      }
-      
-      // Load all data from Firestore with better error handling and retry mechanism
-      const loadCollectionWithRetry = async (collectionName, maxRetries = 3) => {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            console.log(`Loading ${collectionName} (attempt ${attempt})...`);
-            const snapshot = await window.db.collection('users').doc(userId).collection(collectionName).get();
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            console.log(`${collectionName} loaded:`, data.length);
-            return data;
-          } catch (error) {
-            console.warn(`Failed to load ${collectionName} (attempt ${attempt}):`, error.message);
-            if (attempt === maxRetries) {
-              console.error(`Failed to load ${collectionName} after ${maxRetries} attempts`);
-              return [];
-            }
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
-        }
-      };
-
-      const loadDocumentWithRetry = async (collectionName, docName, maxRetries = 3) => {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-          try {
-            console.log(`Loading ${collectionName}/${docName} (attempt ${attempt})...`);
-            const doc = await window.db.collection('users').doc(userId).collection(collectionName).doc(docName).get();
-            const data = doc.exists ? doc.data() : {};
-            console.log(`${collectionName}/${docName} loaded`);
-            return data;
-          } catch (error) {
-            console.warn(`Failed to load ${collectionName}/${docName} (attempt ${attempt}):`, error.message);
-            if (attempt === maxRetries) {
-              console.error(`Failed to load ${collectionName}/${docName} after ${maxRetries} attempts`);
-              return {};
-            }
-            // Wait before retrying
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-          }
-        }
-      };
-
-      // Load all collections in parallel with retry
+      // Load collections
       const [tasks, academics, contacts, projects] = await Promise.allSettled([
-        loadCollectionWithRetry('tasks'),
-        loadCollectionWithRetry('academics'),
-        loadCollectionWithRetry('contacts'),
-        loadCollectionWithRetry('projects')
+        this.loadCollection('tasks'),
+        this.loadCollection('academics'),
+        this.loadCollection('contacts'),
+        this.loadCollection('projects')
       ]);
 
-      // Load documents in parallel with retry
+      // Load documents
       const [settings, portfolio] = await Promise.allSettled([
-        loadDocumentWithRetry('settings', 'main'),
-        loadDocumentWithRetry('portfolio', 'main')
+        this.loadDocument('settings', 'main'),
+        this.loadDocument('portfolio', 'main')
       ]);
 
-      // Assign data with fallbacks
+      // Assign data
       this.data.tasks = tasks.status === 'fulfilled' ? tasks.value : [];
       this.data.academics = academics.status === 'fulfilled' ? academics.value : [];
       this.data.contacts = contacts.status === 'fulfilled' ? contacts.value : [];
@@ -657,114 +213,81 @@ class AdminDashboardFirebase {
 
       this.renderAllData();
       this.loadPortfolioSettings();
-      console.log('All data loaded successfully');
     } catch (error) {
       console.error('Error loading data:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      
-      // More specific error messages
-      if (error.code === 'permission-denied') {
-        this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
-      } else if (error.code === 'unavailable') {
-        this.updateNetworkStatus('firebase-error');
-        this.showNotification('Firebase is unavailable. Please check your internet connection and try refreshing the page.', 'error');
-      } else if (error.message.includes('Cannot connect to Firebase')) {
-        this.updateNetworkStatus('firebase-error');
-        this.showNotification(error.message, 'error');
-      } else {
-        this.showNotification('Error loading data: ' + error.message, 'error');
+      this.showNotification('Error loading data: ' + error.message, 'error');
+    }
+  }
+
+  async loadCollection(collectionName, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (error) {
+        if (attempt === maxRetries) return [];
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
+
+  async loadDocument(collectionName, docName, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const doc = await window.db.collection('users').doc(this.user.uid).collection(collectionName).doc(docName).get();
+        return doc.exists ? doc.data() : {};
+      } catch (error) {
+        if (attempt === maxRetries) return {};
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
   }
 
   async saveData() {
     try {
-      console.log('Saving data to Firestore...');
       const userId = this.user.uid;
-      console.log('User ID:', userId);
-      
-      // Save all data to Firestore
       const batch = window.db.batch();
 
-      // Save tasks
-      this.data.tasks.forEach(task => {
-        const docRef = window.db.collection('users').doc(userId).collection('tasks').doc(task.id);
-        batch.set(docRef, task);
+      // Save collections
+      ['tasks', 'academics', 'contacts', 'projects'].forEach(collection => {
+        this.data[collection].forEach(item => {
+          const docRef = window.db.collection('users').doc(userId).collection(collection).doc(item.id);
+          batch.set(docRef, item);
+        });
       });
 
-      // Save academics
-      this.data.academics.forEach(academic => {
-        const docRef = window.db.collection('users').doc(userId).collection('academics').doc(academic.id);
-        batch.set(docRef, academic);
-      });
-
-      // Save contacts
-      this.data.contacts.forEach(contact => {
-        const docRef = window.db.collection('users').doc(userId).collection('contacts').doc(contact.id);
-        batch.set(docRef, contact);
-      });
-
-      // Save projects
-      this.data.projects.forEach(project => {
-        const docRef = window.db.collection('users').doc(userId).collection('projects').doc(project.id);
-        batch.set(docRef, project);
-      });
-
-      // Save settings
+      // Save documents
       batch.set(window.db.collection('users').doc(userId).collection('settings').doc('main'), this.data.settings);
-
-      // Save portfolio
       batch.set(window.db.collection('users').doc(userId).collection('portfolio').doc('main'), this.data.portfolio);
 
-      console.log('Committing batch write...');
       await batch.commit();
-      console.log('Data saved successfully');
       this.showNotification('Data saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving data:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       this.showNotification('Error saving data: ' + error.message, 'error');
-      
-      // If it's a permissions error, show specific message
-      if (error.code === 'permission-denied') {
-        this.showNotification('Permission denied. Please check Firebase security rules.', 'error');
-      } else if (error.code === 'unavailable') {
-        this.showNotification('Firebase is unavailable. Please check your internet connection.', 'error');
-      }
     }
   }
 
-  // Tab switching
   switchTab(tab) {
     this.currentTab = tab;
     
-    // Update active nav button
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.classList.remove('active');
-    });
+    // Update navigation
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
     
     // Show/hide tabs
-    document.querySelectorAll('.tab').forEach(t => {
-      t.style.display = 'none';
-    });
+    document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
     document.getElementById(tab).style.display = 'block';
     
-    // Load specific data for tab
+    // Load specific data
     if (tab === 'overview') {
       this.loadOverviewData();
-    } else if (tab === 'tasks') {
-      this.renderData('tasks');
-    } else if (tab === 'academics') {
-      this.renderData('academics');
-    } else if (tab === 'contacts') {
-      this.renderData('contacts');
+      this.loadPortfolioSettings(); // Also load portfolio settings to keep overview updated
+    } else if (['tasks', 'academics', 'contacts'].includes(tab)) {
+      this.renderData(tab);
     } else if (tab === 'portfolio') {
       this.renderData('projects');
     } else if (tab === 'portfolio-settings') {
-      // Setup portfolio forms when switching to portfolio-settings tab
       setTimeout(() => {
         this.setupPortfolioForms();
         this.loadPortfolioSettings();
@@ -772,7 +295,6 @@ class AdminDashboardFirebase {
     }
   }
 
-  // Render data for different sections
   renderData(type) {
     const container = document.getElementById(type === 'projects' ? 'projects-list' : `${type}-list`);
     if (!container) return;
@@ -789,7 +311,7 @@ class AdminDashboardFirebase {
       return;
     }
 
-    const itemsHTML = items.map(item => {
+    container.innerHTML = items.map(item => {
       const statusClass = item.status ? `status-${item.status}` : '';
       const statusText = item.status ? item.status.replace('-', ' ') : '';
       
@@ -812,19 +334,12 @@ class AdminDashboardFirebase {
         </div>
       `;
     }).join('');
-
-    container.innerHTML = itemsHTML;
   }
 
-  // Render all data
   renderAllData() {
-    this.renderData('tasks');
-    this.renderData('academics');
-    this.renderData('contacts');
-    this.renderData('projects');
+    ['tasks', 'academics', 'contacts', 'projects'].forEach(type => this.renderData(type));
   }
 
-  // Load overview data
   loadOverviewData() {
     const stats = {
       tasks: this.data.tasks.length,
@@ -834,19 +349,27 @@ class AdminDashboardFirebase {
       projects: this.data.projects.length
     };
 
-    // Update stats display
-    const taskCount = document.getElementById('task-count');
-    const contactCount = document.getElementById('contact-count');
-    const deadlineCount = document.getElementById('deadline-count');
-    const viewCount = document.getElementById('view-count');
-
-    if (taskCount) taskCount.textContent = stats.tasks;
-    if (contactCount) contactCount.textContent = stats.contacts;
-    if (deadlineCount) deadlineCount.textContent = stats.tasks + stats.academics;
-    if (viewCount) viewCount.textContent = '0'; // Placeholder
+    // Update dashboard statistics
+    ['task-count', 'contact-count', 'deadline-count', 'view-count'].forEach((id, index) => {
+      const element = document.getElementById(id);
+      if (element) {
+        const values = [stats.tasks, stats.contacts, stats.tasks + stats.academics, '0'];
+        element.textContent = values[index];
+      }
+    });
+    
+    // Update portfolio statistics if they exist
+    if (this.data.portfolio.stats) {
+      const portfolioStats = this.data.portfolio.stats;
+      ['stats-experience', 'stats-projects', 'stats-technologies'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element && portfolioStats[id.replace('stats-', '')]) {
+          element.value = portfolioStats[id.replace('stats-', '')];
+        }
+      });
+    }
   }
 
-  // Modal functions
   openModal(type) {
     this.editId = null;
     const modal = document.getElementById('modal');
@@ -855,10 +378,8 @@ class AdminDashboardFirebase {
     
     modalTitle.textContent = `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`;
     
-    let fieldsHTML = '';
-    
-    if (type === 'task') {
-      fieldsHTML = `
+    const fieldTemplates = {
+      task: `
         <div class="form-group">
           <label>Title</label>
           <input type="text" id="modal-title-input" placeholder="Task title" required>
@@ -879,9 +400,8 @@ class AdminDashboardFirebase {
           <label>Deadline</label>
           <input type="date" id="modal-deadline-input">
         </div>
-      `;
-    } else if (type === 'academic') {
-      fieldsHTML = `
+      `,
+      academic: `
         <div class="form-group">
           <label>Course/Subject</label>
           <input type="text" id="modal-title-input" placeholder="Course name" required>
@@ -894,9 +414,8 @@ class AdminDashboardFirebase {
           <label>Deadline</label>
           <input type="date" id="modal-deadline-input">
         </div>
-      `;
-    } else if (type === 'project') {
-      fieldsHTML = `
+      `,
+      project: `
         <div class="form-group">
           <label>Project Name</label>
           <input type="text" id="modal-title-input" placeholder="Project name" required>
@@ -913,44 +432,42 @@ class AdminDashboardFirebase {
           <label>Image URL (optional)</label>
           <input type="url" id="modal-image-input" placeholder="https://image-url.com">
         </div>
-      `;
-    }
+      `
+    };
     
-    modalFields.innerHTML = fieldsHTML;
+    modalFields.innerHTML = fieldTemplates[type] || '';
     modal.style.display = 'flex';
     
-    // Setup modal form submission
-    const modalForm = document.getElementById('modal-form');
-    modalForm.onsubmit = (e) => {
+    document.getElementById('modal-form').onsubmit = (e) => {
       e.preventDefault();
       this.handleModalSubmit(type);
     };
   }
 
   closeModal() {
-    const modal = document.getElementById('modal');
-    modal.style.display = 'none';
+    document.getElementById('modal').style.display = 'none';
     this.editId = null;
   }
 
   async handleModalSubmit(type) {
-    const title = document.getElementById('modal-title-input').value;
-    const description = document.getElementById('modal-description-input').value;
-    const status = document.getElementById('modal-status-input')?.value;
-    const deadline = document.getElementById('modal-deadline-input')?.value;
-    const url = document.getElementById('modal-url-input')?.value;
-    const image = document.getElementById('modal-image-input')?.value;
+    const formData = {
+      title: document.getElementById('modal-title-input').value,
+      description: document.getElementById('modal-description-input').value,
+      status: document.getElementById('modal-status-input')?.value,
+      deadline: document.getElementById('modal-deadline-input')?.value,
+      url: document.getElementById('modal-url-input')?.value,
+      image: document.getElementById('modal-image-input')?.value
+    };
     
     const item = {
-      title: title,
-      description: description,
+      title: formData.title,
+      description: formData.description,
       createdAt: new Date().toISOString()
     };
     
-    if (status) item.status = status;
-    if (deadline) item.deadline = deadline;
-    if (url) item.url = url;
-    if (image) item.image = image;
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value) item[key] = value;
+    });
     
     if (this.editId) {
       await this.updateItem(type, this.editId, item);
@@ -967,7 +484,6 @@ class AdminDashboardFirebase {
     this.renderData(type);
     await this.saveData();
     
-    // If it's a project, also save to public portfolio
     if (type === 'projects') {
       await this.saveToPublicPortfolio();
     }
@@ -982,7 +498,6 @@ class AdminDashboardFirebase {
     this.editId = id;
     this.openModal(type);
     
-    // Populate form fields
     setTimeout(() => {
       document.getElementById('modal-title-input').value = item.title || '';
       document.getElementById('modal-description-input').value = item.description || '';
@@ -1003,7 +518,6 @@ class AdminDashboardFirebase {
     this.renderData(type);
     await this.saveData();
     
-    // If it's a project, also save to public portfolio
     if (type === 'projects') {
       await this.saveToPublicPortfolio();
     }
@@ -1018,7 +532,6 @@ class AdminDashboardFirebase {
     this.renderData(type);
     await this.saveData();
     
-    // If it's a project, also save to public portfolio
     if (type === 'projects') {
       await this.saveToPublicPortfolio();
     }
@@ -1026,111 +539,166 @@ class AdminDashboardFirebase {
     this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
   }
 
-  // Portfolio settings functions
+  setupPortfolioForms() {
+    // Forms are already set up in setupEvents()
+  }
+
   loadPortfolioSettings() {
     const portfolio = this.data.portfolio;
     
     // Load profile info
     if (portfolio.profile) {
-      document.getElementById('profile-name').value = portfolio.profile.name || '';
-      document.getElementById('profile-title').value = portfolio.profile.title || '';
-      document.getElementById('profile-subtitle').value = portfolio.profile.subtitle || '';
-      document.getElementById('profile-about').value = portfolio.profile.about || '';
+      ['profile-name', 'profile-title', 'profile-subtitle', 'profile-about'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element && portfolio.profile[id.replace('profile-', '')]) {
+          element.value = portfolio.profile[id.replace('profile-', '')];
+        }
+      });
     }
     
     // Load social links
     if (portfolio.social) {
-      document.getElementById('social-github').value = portfolio.social.github || '';
-      document.getElementById('social-linkedin').value = portfolio.social.linkedin || '';
-      document.getElementById('social-twitter').value = portfolio.social.twitter || '';
-      document.getElementById('social-email').value = portfolio.social.email || '';
+      ['social-github', 'social-linkedin', 'social-twitter', 'social-email'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element && portfolio.social[id.replace('social-', '')]) {
+          element.value = portfolio.social[id.replace('social-', '')];
+        }
+      });
     }
     
     // Load statistics
     if (portfolio.stats) {
-      document.getElementById('stats-experience').value = portfolio.stats.experience || '';
-      document.getElementById('stats-projects').value = portfolio.stats.projects || '';
-      document.getElementById('stats-technologies').value = portfolio.stats.technologies || '';
+      ['stats-experience', 'stats-projects', 'stats-technologies'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element && portfolio.stats[id.replace('stats-', '')]) {
+          element.value = portfolio.stats[id.replace('stats-', '')];
+        }
+      });
     }
     
     // Load contact info
     if (portfolio.contact) {
-      document.getElementById('contact-location').value = portfolio.contact.location || '';
-      document.getElementById('contact-email').value = portfolio.contact.email || '';
-      document.getElementById('contact-education').value = portfolio.contact.education || '';
+      ['contact-location', 'contact-email', 'contact-education'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element && portfolio.contact[id.replace('contact-', '')]) {
+          element.value = portfolio.contact[id.replace('contact-', '')];
+        }
+      });
     }
     
     // Load profile image
     if (portfolio.profileImage) {
       document.getElementById('current-profile-img').src = portfolio.profileImage;
     }
+    
+    // Load skills
+    this.loadSkills();
+  }
+  
+  loadSkills() {
+    const portfolio = this.data.portfolio;
+    if (!portfolio.skills) return;
+    
+    const skillCategories = ['programming', 'web', 'mobile', 'database', 'iot'];
+    
+    skillCategories.forEach(category => {
+      const container = document.getElementById(`${category}-skills`);
+      if (container && portfolio.skills[category]) {
+        container.innerHTML = portfolio.skills[category].map(skill => `
+          <div class="skill-item">
+            <span class="skill-name">${skill.name}</span>
+            <span class="skill-level">${skill.level}</span>
+            <button onclick="removeSkill('${category}', '${skill.name}')" class="btn-danger btn-small">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `).join('');
+      }
+    });
   }
 
-  async saveProfileInfo() {
-    const profile = {
-      name: document.getElementById('profile-name').value,
-      title: document.getElementById('profile-title').value,
-      subtitle: document.getElementById('profile-subtitle').value,
-      about: document.getElementById('profile-about').value
-    };
+  async handleFormSubmit(formId) {
+    const formData = {};
+    const form = document.getElementById(formId);
     
-    this.data.portfolio.profile = profile;
+    // Collect form data
+    form.querySelectorAll('input, textarea').forEach(input => {
+      if (input.value) formData[input.id] = input.value;
+    });
+    
+    // Handle different form types
+    switch (formId) {
+      case 'profile-form':
+        this.data.portfolio.profile = {
+          name: formData['profile-name'],
+          title: formData['profile-title'],
+          subtitle: formData['profile-subtitle'],
+          about: formData['profile-about']
+        };
+        break;
+      case 'social-form':
+        this.data.portfolio.social = {
+          github: formData['social-github'],
+          linkedin: formData['social-linkedin'],
+          twitter: formData['social-twitter'],
+          email: formData['social-email']
+        };
+        break;
+      case 'stats-form':
+        this.data.portfolio.stats = {
+          experience: formData['stats-experience'],
+          projects: formData['stats-projects'],
+          technologies: formData['stats-technologies']
+        };
+        break;
+      case 'contact-info-form':
+        this.data.portfolio.contact = {
+          location: formData['contact-location'],
+          email: formData['contact-email'],
+          education: formData['contact-education']
+        };
+        break;
+      case 'password-form':
+        await this.changePassword(formData);
+        return;
+    }
+    
     await this.saveData();
     await this.saveToPublicPortfolio();
-    this.showNotification('Profile information saved!', 'success');
+    
+    // Refresh dashboard data to show updated information
+    this.loadPortfolioSettings();
+    this.loadOverviewData();
+    
+    this.showNotification('Settings saved successfully!', 'success');
   }
 
-  async saveSocialLinks() {
-    const social = {
-      github: document.getElementById('social-github').value,
-      linkedin: document.getElementById('social-linkedin').value,
-      twitter: document.getElementById('social-twitter').value,
-      email: document.getElementById('social-email').value
-    };
+  async changePassword(formData) {
+    if (formData['new-password'] !== formData['confirm-password']) {
+      this.showNotification('New passwords do not match!', 'error');
+      return;
+    }
     
-    this.data.portfolio.social = social;
-    await this.saveData();
-    await this.saveToPublicPortfolio();
-    this.showNotification('Social links saved!', 'success');
-  }
-
-  async saveStatistics() {
-    const stats = {
-      experience: document.getElementById('stats-experience').value,
-      projects: document.getElementById('stats-projects').value,
-      technologies: document.getElementById('stats-technologies').value
-    };
-    
-    this.data.portfolio.stats = stats;
-    await this.saveData();
-    await this.saveToPublicPortfolio();
-    this.showNotification('Statistics saved!', 'success');
-  }
-
-  async saveContactInfo() {
-    const contact = {
-      location: document.getElementById('contact-location').value,
-      email: document.getElementById('contact-email').value,
-      education: document.getElementById('contact-education').value
-    };
-    
-    this.data.portfolio.contact = contact;
-    await this.saveData();
-    await this.saveToPublicPortfolio();
-    this.showNotification('Contact information saved!', 'success');
+    try {
+      const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, formData['current-password']);
+      await this.user.reauthenticateWithCredential(credential);
+      await this.user.updatePassword(formData['new-password']);
+      
+      this.showNotification('Password changed successfully!', 'success');
+      document.getElementById('password-form').reset();
+    } catch (error) {
+      this.showNotification('Error changing password: ' + error.message, 'error');
+    }
   }
 
   async saveToPublicPortfolio() {
     try {
-      console.log('Saving to public portfolio...');
-      console.log('Portfolio data to save:', this.data.portfolio);
-      
-      // Save portfolio settings to public location
       await window.db.collection('public').doc('portfolio').set({
         profile: this.data.portfolio.profile || {},
         social: this.data.portfolio.social || {},
         stats: this.data.portfolio.stats || {},
         contact: this.data.portfolio.contact || {},
+        skills: this.data.portfolio.skills || {},
         profileImage: this.data.portfolio.profileImage || '',
         lastUpdated: new Date().toISOString()
       }, { merge: true });
@@ -1144,12 +712,8 @@ class AdminDashboardFirebase {
       await Promise.all(deletePromises);
       
       // Add current projects
-      const addPromises = this.data.projects.map(project => 
-        projectsRef.add(project)
-      );
+      const addPromises = this.data.projects.map(project => projectsRef.add(project));
       await Promise.all(addPromises);
-      
-      console.log('Portfolio data saved to public location');
     } catch (error) {
       console.error('Error saving to public portfolio:', error);
       this.showNotification('Error saving to public portfolio: ' + error.message, 'error');
@@ -1175,32 +739,6 @@ class AdminDashboardFirebase {
     }
   }
 
-  async changePassword() {
-    const currentPassword = document.getElementById('current-password').value;
-    const newPassword = document.getElementById('new-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
-    
-    if (newPassword !== confirmPassword) {
-      this.showNotification('New passwords do not match!', 'error');
-      return;
-    }
-    
-    try {
-      // Re-authenticate user
-      const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, currentPassword);
-      await this.user.reauthenticateWithCredential(credential);
-      
-      // Change password
-      await this.user.updatePassword(newPassword);
-      
-      this.showNotification('Password changed successfully!', 'success');
-      document.getElementById('password-form').reset();
-    } catch (error) {
-      this.showNotification('Error changing password: ' + error.message, 'error');
-    }
-  }
-
-  // Utility methods
   generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
@@ -1230,39 +768,20 @@ class AdminDashboardFirebase {
 let adminDashboard;
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM Content Loaded - Initializing Admin Dashboard');
   try {
-    adminDashboard = new AdminDashboardFirebase();
-    console.log('Admin Dashboard initialized successfully');
+    adminDashboard = new AdminDashboard();
   } catch (error) {
     console.error('Error initializing Admin Dashboard:', error);
   }
 });
 
 // Global functions for HTML onclick handlers
-function switchTab(tab) {
-  adminDashboard.switchTab(tab);
-}
-
-function logout() {
-  adminDashboard.logout();
-}
-
-function openModal(type) {
-  adminDashboard.openModal(type);
-}
-
-function closeModal() {
-  adminDashboard.closeModal();
-}
-
-function editItem(type, id) {
-  adminDashboard.editItem(type, id);
-}
-
-function deleteItem(type, id) {
-  adminDashboard.deleteItem(type, id);
-}
+function switchTab(tab) { adminDashboard.switchTab(tab); }
+function logout() { adminDashboard.logout(); }
+function openModal(type) { adminDashboard.openModal(type); }
+function closeModal() { adminDashboard.closeModal(); }
+function editItem(type, id) { adminDashboard.editItem(type, id); }
+function deleteItem(type, id) { adminDashboard.deleteItem(type, id); }
 
 async function resetProfileImage() {
   document.getElementById('current-profile-img').src = '../assets/profile.svg';
@@ -1272,91 +791,88 @@ async function resetProfileImage() {
   adminDashboard.showNotification('Profile image reset to default!', 'success');
 }
 
-// Additional global functions for admin dashboard
 function markAllRead() {
-  if (adminDashboard) {
-    adminDashboard.data.contacts.forEach(contact => {
-      contact.read = true;
-    });
-    adminDashboard.renderData('contacts');
-    adminDashboard.saveData();
-    adminDashboard.showNotification('All contacts marked as read!', 'success');
-  }
+  adminDashboard.data.contacts.forEach(contact => contact.read = true);
+  adminDashboard.renderData('contacts');
+  adminDashboard.saveData();
+  adminDashboard.showNotification('All contacts marked as read!', 'success');
 }
 
 function addSkill(category) {
-  if (adminDashboard) {
-    const skillName = prompt('Enter skill name:');
-    if (skillName) {
-      const skillLevel = prompt('Enter skill level (Beginner/Intermediate/Advanced):');
-      if (skillLevel) {
-        if (!adminDashboard.data.portfolio.skills) {
-          adminDashboard.data.portfolio.skills = {};
-        }
-        if (!adminDashboard.data.portfolio.skills[category]) {
-          adminDashboard.data.portfolio.skills[category] = [];
-        }
-        
-        adminDashboard.data.portfolio.skills[category].push({
-          name: skillName,
-          level: skillLevel
-        });
-        
-        adminDashboard.saveData();
-        adminDashboard.saveToPublicPortfolio();
-        adminDashboard.showNotification('Skill added successfully!', 'success');
-      }
+  const skillName = prompt('Enter skill name:');
+  if (skillName) {
+    const skillLevel = prompt('Enter skill level (Beginner/Intermediate/Advanced):');
+    if (skillLevel) {
+      if (!adminDashboard.data.portfolio.skills) adminDashboard.data.portfolio.skills = {};
+      if (!adminDashboard.data.portfolio.skills[category]) adminDashboard.data.portfolio.skills[category] = [];
+      
+      adminDashboard.data.portfolio.skills[category].push({
+        name: skillName,
+        level: skillLevel
+      });
+      
+      adminDashboard.saveData();
+      adminDashboard.saveToPublicPortfolio();
+      adminDashboard.loadSkills();
+      adminDashboard.showNotification('Skill added successfully!', 'success');
+    }
+  }
+}
+
+function removeSkill(category, skillName) {
+  if (confirm(`Are you sure you want to remove ${skillName}?`)) {
+    if (adminDashboard.data.portfolio.skills && adminDashboard.data.portfolio.skills[category]) {
+      adminDashboard.data.portfolio.skills[category] = adminDashboard.data.portfolio.skills[category].filter(
+        skill => skill.name !== skillName
+      );
+      
+      adminDashboard.saveData();
+      adminDashboard.saveToPublicPortfolio();
+      adminDashboard.loadSkills();
+      adminDashboard.showNotification('Skill removed successfully!', 'success');
     }
   }
 }
 
 function exportData() {
-  if (adminDashboard) {
-    const dataStr = JSON.stringify(adminDashboard.data, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'portfolio-data.json';
-    link.click();
-    URL.revokeObjectURL(url);
-    adminDashboard.showNotification('Data exported successfully!', 'success');
-  }
+  const dataStr = JSON.stringify(adminDashboard.data, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(dataBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'portfolio-data.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  adminDashboard.showNotification('Data exported successfully!', 'success');
 }
 
 function importData() {
-  if (adminDashboard) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        try {
-          const text = await file.text();
-          const data = JSON.parse(text);
-          adminDashboard.data = { ...adminDashboard.data, ...data };
-          await adminDashboard.saveData();
-          adminDashboard.renderAllData();
-          adminDashboard.showNotification('Data imported successfully!', 'success');
-        } catch (error) {
-          adminDashboard.showNotification('Error importing data: ' + error.message, 'error');
-        }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        adminDashboard.data = { ...adminDashboard.data, ...data };
+        await adminDashboard.saveData();
+        adminDashboard.renderAllData();
+        adminDashboard.showNotification('Data imported successfully!', 'success');
+      } catch (error) {
+        adminDashboard.showNotification('Error importing data: ' + error.message, 'error');
       }
-    };
-    input.click();
-  }
+    }
+  };
+  input.click();
 }
 
 function clearData() {
-  if (adminDashboard && confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+  if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
     adminDashboard.data = {
-      tasks: [],
-      academics: [],
-      contacts: [],
-      projects: [],
-      settings: {},
-      portfolio: {}
+      tasks: [], academics: [], contacts: [], projects: [],
+      settings: {}, portfolio: {}
     };
     adminDashboard.saveData();
     adminDashboard.renderAllData();
