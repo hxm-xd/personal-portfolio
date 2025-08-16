@@ -313,6 +313,11 @@ class AdminDashboard {
     const container = document.getElementById(type === 'projects' ? 'projects-list' : `${type}-list`);
     if (!container) return;
 
+    // Ensure the array exists
+    if (!this.data[type]) {
+      this.data[type] = [];
+    }
+
     const items = this.data[type];
     if (items.length === 0) {
       container.innerHTML = `
@@ -499,6 +504,11 @@ class AdminDashboard {
   }
 
   async addItem(type, item) {
+    // Ensure the array exists
+    if (!this.data[type]) {
+      this.data[type] = [];
+    }
+    
     item.id = this.generateId();
     this.data[type].push(item);
     this.renderData(type);
@@ -512,6 +522,11 @@ class AdminDashboard {
   }
 
   editItem(type, id) {
+    // Ensure the array exists
+    if (!this.data[type]) {
+      this.data[type] = [];
+    }
+    
     const item = this.data[type].find(item => item.id === id);
     if (!item) return;
     
@@ -531,6 +546,11 @@ class AdminDashboard {
   }
 
   async updateItem(type, id, updatedItem) {
+    // Ensure the array exists
+    if (!this.data[type]) {
+      this.data[type] = [];
+    }
+    
     const index = this.data[type].findIndex(item => item.id === id);
     if (index === -1) return;
     
@@ -547,6 +567,11 @@ class AdminDashboard {
 
   async deleteItem(type, id) {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+    
+    // Ensure the array exists
+    if (!this.data[type]) {
+      this.data[type] = [];
+    }
     
     this.data[type] = this.data[type].filter(item => item.id !== id);
     this.renderData(type);
