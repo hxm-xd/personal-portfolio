@@ -193,38 +193,37 @@ function getSampleProjects() {
 
 // Update skills on the portfolio page
 function updateSkills(skills) {
+  console.log('Updating skills with:', skills);
+  
   const skillCategoryMap = {
-    'programming': 'Programming Languages',
-    'web': 'Web Technologies',
-    'mobile': 'Mobile Development',
-    'database': 'Databases',
-    'iot': 'IoT & Hardware'
+    'programming': 'programming-skills',
+    'web': 'web-skills',
+    'mobile': 'mobile-skills',
+    'database': 'database-skills',
+    'iot': 'iot-skills'
   };
 
   Object.keys(skillCategoryMap).forEach(categoryKey => {
-    const categoryTitle = skillCategoryMap[categoryKey];
-    // Find the skill category by looking for the h3 with the specific title
-    const skillCategories = document.querySelectorAll('.skill-category');
-    let targetCategory = null;
+    const containerId = skillCategoryMap[categoryKey];
+    const container = document.getElementById(containerId);
     
-    skillCategories.forEach(category => {
-      const h3 = category.querySelector('h3');
-      if (h3 && h3.textContent === categoryTitle) {
-        targetCategory = category;
-      }
-    });
-    
-    if (targetCategory && skills[categoryKey]) {
-      const container = targetCategory.querySelector('.skill-items');
-      if (container) {
-        container.innerHTML = skills[categoryKey].map(skill => `
-          <div class="skill-item">
-            <i class="fas fa-check-circle"></i>
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
+    if (container && skills[categoryKey] && skills[categoryKey].length > 0) {
+      container.innerHTML = skills[categoryKey].map(skill => `
+        <div class="skill-item">
+          <i class="fas fa-check-circle"></i>
+          <span class="skill-name">${skill.name}</span>
+          <span class="skill-level">${skill.level}</span>
+        </div>
+      `).join('');
+      console.log(`Updated ${categoryKey} skills:`, skills[categoryKey]);
+    } else if (container) {
+      // Show empty state for this category
+      container.innerHTML = `
+        <div class="skill-item" style="opacity: 0.5; font-style: italic;">
+          <i class="fas fa-plus-circle"></i>
+          <span>Add skills through admin dashboard</span>
+        </div>
+      `;
     }
   });
 }

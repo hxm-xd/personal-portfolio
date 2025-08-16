@@ -124,7 +124,7 @@ function loadPortfolioSettings() {
   
   // Update skills
   if (portfolio.skills) {
-    this.updateSkills(portfolio.skills);
+    updateSkills(portfolio.skills);
   }
   
   // Update profile image
@@ -172,75 +172,39 @@ function loadPortfolioSettings() {
 
 // Update skills on the portfolio page
 function updateSkills(skills) {
-  // Find all skill categories and update them based on their position
-  const skillCategories = document.querySelectorAll('.skill-category');
+  console.log('Updating skills with:', skills);
   
-  if (skillCategories.length >= 5) {
-    // Programming Languages (first category)
-    if (skills.programming) {
-      const programmingContainer = skillCategories[0].querySelector('.skill-items');
-      if (programmingContainer) {
-        programmingContainer.innerHTML = skills.programming.map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
-    }
+  const skillCategoryMap = {
+    'programming': 'programming-skills',
+    'web': 'web-skills',
+    'mobile': 'mobile-skills',
+    'database': 'database-skills',
+    'iot': 'iot-skills'
+  };
+
+  Object.keys(skillCategoryMap).forEach(categoryKey => {
+    const containerId = skillCategoryMap[categoryKey];
+    const container = document.getElementById(containerId);
     
-    // Web Technologies (second category)
-    if (skills.web) {
-      const webContainer = skillCategories[1].querySelector('.skill-items');
-      if (webContainer) {
-        webContainer.innerHTML = skills.web.map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
+    if (container && skills[categoryKey] && skills[categoryKey].length > 0) {
+      container.innerHTML = skills[categoryKey].map(skill => `
+        <div class="skill-item">
+          <i class="fas fa-check-circle"></i>
+          <span class="skill-name">${skill.name}</span>
+          <span class="skill-level">${skill.level}</span>
+        </div>
+      `).join('');
+      console.log(`Updated ${categoryKey} skills:`, skills[categoryKey]);
+    } else if (container) {
+      // Show empty state for this category
+      container.innerHTML = `
+        <div class="skill-item" style="opacity: 0.5; font-style: italic;">
+          <i class="fas fa-plus-circle"></i>
+          <span>Add skills through admin dashboard</span>
+        </div>
+      `;
     }
-    
-    // Mobile Development (third category)
-    if (skills.mobile) {
-      const mobileContainer = skillCategories[2].querySelector('.skill-items');
-      if (mobileContainer) {
-        mobileContainer.innerHTML = skills.mobile.map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
-    }
-    
-    // Databases (fourth category)
-    if (skills.database) {
-      const databaseContainer = skillCategories[3].querySelector('.skill-items');
-      if (databaseContainer) {
-        databaseContainer.innerHTML = skills.database.map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
-    }
-    
-    // IoT & Hardware (fifth category)
-    if (skills.iot) {
-      const iotContainer = skillCategories[4].querySelector('.skill-items');
-      if (iotContainer) {
-        iotContainer.innerHTML = skills.iot.map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-          </div>
-        `).join('');
-      }
-    }
-  }
+  });
 }
 
 // Setup profile image functionality
