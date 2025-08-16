@@ -691,16 +691,44 @@ class AdminDashboard {
     
     skillCategories.forEach(category => {
       const container = document.getElementById(`${category}-skills`);
+      const countElement = document.getElementById(`${category}-count`);
+      
       if (container && portfolio.skills[category]) {
-        container.innerHTML = portfolio.skills[category].map(skill => `
-          <div class="skill-item">
-            <span class="skill-name">${skill.name}</span>
-            <span class="skill-level">${skill.level}</span>
-            <button onclick="removeSkill('${category}', '${skill.name}')" class="btn-danger btn-small">
-              <i class="fas fa-trash"></i>
-            </button>
+        // Update skill count
+        if (countElement) {
+          countElement.textContent = portfolio.skills[category].length;
+        }
+        
+        container.innerHTML = portfolio.skills[category].map(skill => {
+          const levelClass = skill.level.toLowerCase();
+          const descriptionHtml = skill.description ? `<div class="skill-description">${skill.description}</div>` : '';
+          
+          return `
+            <div class="skill-item">
+              <div class="skill-info">
+                <span class="skill-name">${skill.name}</span>
+                <span class="skill-level ${levelClass}">${skill.level}</span>
+                ${descriptionHtml}
+              </div>
+              <button onclick="removeSkill('${category}', '${skill.name}')" class="remove-skill" title="Remove skill">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+        }).join('');
+      } else if (container) {
+        // Show empty state
+        container.innerHTML = `
+          <div class="skill-item" style="opacity: 0.6; font-style: italic; justify-content: center;">
+            <i class="fas fa-plus-circle"></i>
+            <span>No skills added yet</span>
           </div>
-        `).join('');
+        `;
+        
+        // Reset count to 0
+        if (countElement) {
+          countElement.textContent = '0';
+        }
       }
     });
   }
@@ -964,25 +992,87 @@ function markAllRead() {
   adminDashboard.showNotification('All contacts marked as read!', 'success');
 }
 
-function addSkill(category) {
-  const skillName = prompt('Enter skill name:');
-  if (skillName) {
-    const skillLevel = prompt('Enter skill level (Beginner/Intermediate/Advanced):');
-    if (skillLevel) {
-      if (!adminDashboard.data.portfolio.skills) adminDashboard.data.portfolio.skills = {};
-      if (!adminDashboard.data.portfolio.skills[category]) adminDashboard.data.portfolio.skills[category] = [];
-      
-      adminDashboard.data.portfolio.skills[category].push({
-        name: skillName,
-        level: skillLevel
-      });
-      
-      adminDashboard.saveData();
-      adminDashboard.saveToPublicPortfolio();
-      adminDashboard.loadSkills();
-      adminDashboard.showNotification('Skill added successfully!', 'success');
-    }
+let currentSkillCategory = null;
+
+function openSkillModal(category) {
+  currentSkillCategory = category;
+  const modal = document.getElementById('skill-modal');
+  const modalTitle = document.getElementById('skill-modal-title');
+  
+  // Set modal title based on category
+  const categoryNames = {
+    'programming': 'Programming Language',
+    'web': 'Web Technology',
+    'mobile': 'Mobile Technology',
+    'database': 'Database',
+    'iot': 'IoT Technology'
+  };
+  
+  modalTitle.textContent = `Add ${categoryNames[category] || 'Skill'}`;
+  
+  // Reset form
+  document.getElementById('skill-modal-form').reset();
+  
+  // Show modal
+  modal.style.display = 'flex';
+  
+  // Focus on skill name input
+  setTimeout(() => {
+    document.getElementById('skill-name').focus();
+  }, 100);
+}
+
+function closeSkillModal() {
+  document.getElementById('skill-modal').style.display = 'none';
+  currentSkillCategory = null;
+}
+
+// Add event listener for skill modal form
+document.addEventListener('DOMContentLoaded', () => {
+  const skillModalForm = document.getElementById('skill-modal-form');
+  if (skillModalForm) {
+    skillModalForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      addSkillFromModal();
+    });
   }
+});
+
+function addSkillFromModal() {
+  const skillName = document.getElementById('skill-name').value.trim();
+  const skillLevel = document.getElementById('skill-level').value;
+  const skillDescription = document.getElementById('skill-description').value.trim();
+  
+  if (!skillName || !skillLevel) {
+    adminDashboard.showNotification('Please fill in all required fields!', 'error');
+    return;
+  }
+  
+  if (!adminDashboard.data.portfolio.skills) adminDashboard.data.portfolio.skills = {};
+  if (!adminDashboard.data.portfolio.skills[currentSkillCategory]) adminDashboard.data.portfolio.skills[currentSkillCategory] = [];
+  
+  const newSkill = {
+    name: skillName,
+    level: skillLevel
+  };
+  
+  if (skillDescription) {
+    newSkill.description = skillDescription;
+  }
+  
+  adminDashboard.data.portfolio.skills[currentSkillCategory].push(newSkill);
+  
+  adminDashboard.saveData();
+  adminDashboard.saveToPublicPortfolio();
+  adminDashboard.loadSkills();
+  adminDashboard.showNotification('Skill added successfully!', 'success');
+  
+  closeSkillModal();
+}
+
+function addSkill(category) {
+  // Legacy function - redirect to new modal
+  openSkillModal(category);
 }
 
 function removeSkill(category, skillName) {

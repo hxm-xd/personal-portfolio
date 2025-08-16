@@ -398,18 +398,28 @@
             <div class="settings-card">
               <h3><i class="fas fa-code"></i> Skills Management</h3>
               <div class="skills-management">
+                <div class="skills-header">
+                  <h3><i class="fas fa-tools"></i> Skills & Technologies</h3>
+                  <p style="color: var(--text-secondary); margin-bottom: 1.5rem">
+                    Manage your technical skills and proficiency levels. Skills will be displayed on your public portfolio.
+                  </p>
+                </div>
+                
                 <div class="skills-categories">
                   <div class="skill-category">
-                    <h4>
-                      <i class="fas fa-laptop-code"></i> Programming Languages
-                    </h4>
+                    <div class="category-header">
+                      <h4>
+                        <i class="fas fa-laptop-code"></i> Programming Languages
+                      </h4>
+                      <span class="skill-count" id="programming-count">0</span>
+                    </div>
                     <div class="skill-items" id="programming-skills">
                       <!-- Skills will be loaded here -->
                     </div>
                     <button
                       type="button"
-                      onclick="addSkill('programming')"
-                      class="btn-secondary"
+                      onclick="openSkillModal('programming')"
+                      class="btn-secondary btn-add-skill"
                     >
                       <i class="fas fa-plus"></i>
                       Add Language
@@ -417,14 +427,17 @@
                   </div>
 
                   <div class="skill-category">
-                    <h4><i class="fas fa-globe"></i> Web Technologies</h4>
+                    <div class="category-header">
+                      <h4><i class="fas fa-globe"></i> Web Technologies</h4>
+                      <span class="skill-count" id="web-count">0</span>
+                    </div>
                     <div class="skill-items" id="web-skills">
                       <!-- Skills will be loaded here -->
                     </div>
                     <button
                       type="button"
-                      onclick="addSkill('web')"
-                      class="btn-secondary"
+                      onclick="openSkillModal('web')"
+                      class="btn-secondary btn-add-skill"
                     >
                       <i class="fas fa-plus"></i>
                       Add Technology
@@ -432,16 +445,19 @@
                   </div>
 
                   <div class="skill-category">
-                    <h4>
-                      <i class="fas fa-mobile-alt"></i> Mobile Development
-                    </h4>
+                    <div class="category-header">
+                      <h4>
+                        <i class="fas fa-mobile-alt"></i> Mobile Development
+                      </h4>
+                      <span class="skill-count" id="mobile-count">0</span>
+                    </div>
                     <div class="skill-items" id="mobile-skills">
                       <!-- Skills will be loaded here -->
                     </div>
                     <button
                       type="button"
-                      onclick="addSkill('mobile')"
-                      class="btn-secondary"
+                      onclick="openSkillModal('mobile')"
+                      class="btn-secondary btn-add-skill"
                     >
                       <i class="fas fa-plus"></i>
                       Add Technology
@@ -449,14 +465,17 @@
                   </div>
 
                   <div class="skill-category">
-                    <h4><i class="fas fa-database"></i> Databases</h4>
+                    <div class="category-header">
+                      <h4><i class="fas fa-database"></i> Databases</h4>
+                      <span class="skill-count" id="database-count">0</span>
+                    </div>
                     <div class="skill-items" id="database-skills">
                       <!-- Skills will be loaded here -->
                     </div>
                     <button
                       type="button"
-                      onclick="addSkill('database')"
-                      class="btn-secondary"
+                      onclick="openSkillModal('database')"
+                      class="btn-secondary btn-add-skill"
                     >
                       <i class="fas fa-plus"></i>
                       Add Database
@@ -464,14 +483,17 @@
                   </div>
 
                   <div class="skill-category">
-                    <h4><i class="fas fa-microchip"></i> IoT & Hardware</h4>
+                    <div class="category-header">
+                      <h4><i class="fas fa-microchip"></i> IoT & Hardware</h4>
+                      <span class="skill-count" id="iot-count">0</span>
+                    </div>
                     <div class="skill-items" id="iot-skills">
                       <!-- Skills will be loaded here -->
                     </div>
                     <button
                       type="button"
-                      onclick="addSkill('iot')"
-                      class="btn-secondary"
+                      onclick="openSkillModal('iot')"
+                      class="btn-secondary btn-add-skill"
                     >
                       <i class="fas fa-plus"></i>
                       Add Technology
@@ -635,6 +657,48 @@
             <button type="submit" class="btn-primary">
               <i class="fas fa-save"></i>
               Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Skill Modal -->
+    <div id="skill-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="skill-modal-title">Add Skill</h3>
+          <button onclick="closeSkillModal()" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <form id="skill-modal-form">
+          <div class="form-group">
+            <label for="skill-name">Skill Name</label>
+            <input type="text" id="skill-name" placeholder="e.g., JavaScript, React, Python" required>
+          </div>
+          <div class="form-group">
+            <label for="skill-level">Proficiency Level</label>
+            <select id="skill-level" required>
+              <option value="">Select level...</option>
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+              <option value="Expert">Expert</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="skill-description">Description (Optional)</label>
+            <textarea id="skill-description" placeholder="Brief description of your experience with this skill..." rows="3"></textarea>
+          </div>
+          <div class="modal-actions">
+            <button type="button" onclick="closeSkillModal()" class="btn-secondary">
+              <i class="fas fa-times"></i>
+              Cancel
+            </button>
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-plus"></i>
+              Add Skill
             </button>
           </div>
         </form>
