@@ -55,19 +55,17 @@ async function loadPortfolioSettingsFromFirebase() {
     // Update profile information
     if (portfolio.profile) {
       if (portfolio.profile.name) {
-        document.querySelector('.profile-info h1').textContent = portfolio.profile.name;
+        document.getElementById('profile-name').textContent = portfolio.profile.name;
+        document.getElementById('footer-name').textContent = portfolio.profile.name;
       }
       if (portfolio.profile.title) {
-        document.querySelector('.profile-info .title').textContent = portfolio.profile.title;
+        document.getElementById('profile-title').textContent = portfolio.profile.title;
       }
       if (portfolio.profile.subtitle) {
-        document.querySelector('.profile-info .subtitle').textContent = portfolio.profile.subtitle;
+        document.getElementById('profile-subtitle').textContent = portfolio.profile.subtitle;
       }
       if (portfolio.profile.about) {
-        const aboutText = document.querySelector('.about-text p:first-child');
-        if (aboutText) {
-          aboutText.textContent = portfolio.profile.about;
-        }
+        document.getElementById('about-text').textContent = portfolio.profile.about;
       }
     }
 
@@ -75,11 +73,10 @@ async function loadPortfolioSettingsFromFirebase() {
     if (portfolio.social) {
       console.log('Updating social links with:', portfolio.social);
       
-      // Find social links by their icon classes to ensure correct order
-      const githubLink = document.querySelector('.social-link .fab.fa-github')?.parentElement;
-      const linkedinLink = document.querySelector('.social-link .fab.fa-linkedin')?.parentElement;
-      const twitterLink = document.querySelector('.social-link .fab.fa-twitter')?.parentElement;
-      const emailLink = document.querySelector('.social-link .fas.fa-envelope')?.parentElement;
+      const githubLink = document.getElementById('github-link');
+      const linkedinLink = document.getElementById('linkedin-link');
+      const twitterLink = document.getElementById('twitter-link');
+      const emailLink = document.getElementById('email-link');
       
       if (portfolio.social.github && githubLink) {
         githubLink.href = portfolio.social.github;
@@ -105,15 +102,14 @@ async function loadPortfolioSettingsFromFirebase() {
 
     // Update statistics
     if (portfolio.stats) {
-      const statNumbers = document.querySelectorAll('.stat-number');
-      if (portfolio.stats.experience && statNumbers[0]) {
-        statNumbers[0].textContent = portfolio.stats.experience + '+';
+      if (portfolio.stats.experience) {
+        document.getElementById('experience-stat').textContent = portfolio.stats.experience + '+';
       }
-      if (portfolio.stats.projects && statNumbers[1]) {
-        statNumbers[1].textContent = portfolio.stats.projects + '+';
+      if (portfolio.stats.projects) {
+        document.getElementById('projects-stat').textContent = portfolio.stats.projects + '+';
       }
-      if (portfolio.stats.technologies && statNumbers[2]) {
-        statNumbers[2].textContent = portfolio.stats.technologies + '+';
+      if (portfolio.stats.technologies) {
+        document.getElementById('technologies-stat').textContent = portfolio.stats.technologies + '+';
       }
     }
 
@@ -127,30 +123,14 @@ async function loadPortfolioSettingsFromFirebase() {
 
     // Update contact information
     if (portfolio.contact) {
-      const contactItems = document.querySelectorAll('.contact-item');
-      
-      // Update email (first contact item)
-      if (portfolio.contact.email && contactItems[0]) {
-        const emailText = contactItems[0].querySelector('p');
-        if (emailText) {
-          emailText.textContent = portfolio.contact.email;
-        }
+      if (portfolio.contact.email) {
+        document.getElementById('contact-email').textContent = portfolio.contact.email;
       }
-      
-      // Update location (second contact item)
-      if (portfolio.contact.location && contactItems[1]) {
-        const locationText = contactItems[1].querySelector('p');
-        if (locationText) {
-          locationText.textContent = portfolio.contact.location;
-        }
+      if (portfolio.contact.location) {
+        document.getElementById('contact-location').textContent = portfolio.contact.location;
       }
-      
-      // Update education (third contact item)
-      if (portfolio.contact.education && contactItems[2]) {
-        const educationText = contactItems[2].querySelector('p');
-        if (educationText) {
-          educationText.textContent = portfolio.contact.education;
-        }
+      if (portfolio.contact.education) {
+        document.getElementById('contact-education').textContent = portfolio.contact.education;
       }
     }
 
