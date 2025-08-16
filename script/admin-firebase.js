@@ -520,19 +520,22 @@ class AdminDashboard {
   async addItem(type, item) {
     console.log('Adding item:', type, item);
     
+    // Map type to correct data key
+    const dataKey = type === 'project' ? 'projects' : type;
+    
     // Ensure the array exists
-    if (!this.data[type]) {
-      this.data[type] = [];
+    if (!this.data[dataKey]) {
+      this.data[dataKey] = [];
     }
     
     item.id = this.generateId();
-    this.data[type].push(item);
-    console.log('Item added to data:', this.data[type]);
+    this.data[dataKey].push(item);
+    console.log('Item added to data:', this.data[dataKey]);
     
-    this.renderData(type);
+    this.renderData(dataKey);
     await this.saveData();
     
-    if (type === 'projects') {
+    if (dataKey === 'projects') {
       await this.saveToPublicPortfolio();
     }
     
@@ -540,12 +543,15 @@ class AdminDashboard {
   }
 
   editItem(type, id) {
+    // Map type to correct data key
+    const dataKey = type === 'project' ? 'projects' : type;
+    
     // Ensure the array exists
-    if (!this.data[type]) {
-      this.data[type] = [];
+    if (!this.data[dataKey]) {
+      this.data[dataKey] = [];
     }
     
-    const item = this.data[type].find(item => item.id === id);
+    const item = this.data[dataKey].find(item => item.id === id);
     if (!item) return;
     
     this.editId = id;
@@ -564,19 +570,22 @@ class AdminDashboard {
   }
 
   async updateItem(type, id, updatedItem) {
+    // Map type to correct data key
+    const dataKey = type === 'project' ? 'projects' : type;
+    
     // Ensure the array exists
-    if (!this.data[type]) {
-      this.data[type] = [];
+    if (!this.data[dataKey]) {
+      this.data[dataKey] = [];
     }
     
-    const index = this.data[type].findIndex(item => item.id === id);
+    const index = this.data[dataKey].findIndex(item => item.id === id);
     if (index === -1) return;
     
-    this.data[type][index] = { ...this.data[type][index], ...updatedItem };
-    this.renderData(type);
+    this.data[dataKey][index] = { ...this.data[dataKey][index], ...updatedItem };
+    this.renderData(dataKey);
     await this.saveData();
     
-    if (type === 'projects') {
+    if (dataKey === 'projects') {
       await this.saveToPublicPortfolio();
     }
     
@@ -586,16 +595,19 @@ class AdminDashboard {
   async deleteItem(type, id) {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
     
+    // Map type to correct data key
+    const dataKey = type === 'project' ? 'projects' : type;
+    
     // Ensure the array exists
-    if (!this.data[type]) {
-      this.data[type] = [];
+    if (!this.data[dataKey]) {
+      this.data[dataKey] = [];
     }
     
-    this.data[type] = this.data[type].filter(item => item.id !== id);
-    this.renderData(type);
+    this.data[dataKey] = this.data[dataKey].filter(item => item.id !== id);
+    this.renderData(dataKey);
     await this.saveData();
     
-    if (type === 'projects') {
+    if (dataKey === 'projects') {
       await this.saveToPublicPortfolio();
     }
     
