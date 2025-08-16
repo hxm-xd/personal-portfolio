@@ -29,20 +29,20 @@
               </div>
             </div>
             <div class="profile-info">
-              <h1>Hamood Thariq</h1>
-              <p class="title">Software Engineering Student</p>
-              <p class="subtitle">IoT & Robotics Enthusiast</p>
+              <h1 id="profile-name">Your Name</h1>
+              <p class="title" id="profile-title">Your Title</p>
+              <p class="subtitle" id="profile-subtitle">Your Subtitle</p>
               <div class="social-links">
-                <a href="#" class="social-link">
+                <a href="#" class="social-link" id="github-link">
                   <i class="fab fa-github"></i>
                 </a>
-                <a href="#" class="social-link">
+                <a href="#" class="social-link" id="linkedin-link">
                   <i class="fab fa-linkedin"></i>
                 </a>
-                <a href="#" class="social-link">
+                <a href="#" class="social-link" id="twitter-link">
                   <i class="fab fa-twitter"></i>
                 </a>
-                <a href="mailto:hamood@example.com" class="social-link">
+                <a href="#" class="social-link" id="email-link">
                   <i class="fas fa-envelope"></i>
                 </a>
               </div>
@@ -83,31 +83,21 @@
         </div>
         <div class="about-content">
           <div class="about-text">
-            <p>
-              I'm a passionate software engineering student at NIBM, focused on
-              solving real-world problems through creative digital solutions. My
-              interests span across mobile app development, IoT systems, and
-              AI-driven robotics. I thrive on teamwork, continuous learning, and
-              innovation.
-            </p>
-            <p>
-              When I'm not coding, you can find me exploring new technologies,
-              contributing to open-source projects, or working on my latest IoT
-              creation. I believe in the power of technology to make a positive
-              impact on the world.
+            <p id="about-text">
+              Add your about information through the admin dashboard.
             </p>
           </div>
           <div class="about-stats">
             <div class="stat-item">
-              <div class="stat-number">3+</div>
+              <div class="stat-number" id="experience-stat">0+</div>
               <div class="stat-label">Years Experience</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number">15+</div>
+              <div class="stat-number" id="projects-stat">0+</div>
               <div class="stat-label">Projects Completed</div>
             </div>
             <div class="stat-item">
-              <div class="stat-number">5+</div>
+              <div class="stat-number" id="technologies-stat">0+</div>
               <div class="stat-label">Technologies</div>
             </div>
           </div>
@@ -125,83 +115,36 @@
         <div class="skills-grid">
           <div class="skill-category">
             <h3><i class="fas fa-laptop-code"></i> Programming Languages</h3>
-            <div class="skill-items">
-              <div class="skill-item">
-                <i class="fab fa-java"></i>
-                <span>Java</span>
-              </div>
-              <div class="skill-item">
-                <i class="fas fa-hashtag"></i>
-                <span>C#</span>
-              </div>
-              <div class="skill-item">
-                <i class="fab fa-python"></i>
-                <span>Python</span>
-              </div>
+            <div class="skill-items" id="programming-skills">
+              <!-- Skills will be loaded from Firebase -->
             </div>
           </div>
 
           <div class="skill-category">
             <h3><i class="fas fa-globe"></i> Web Technologies</h3>
-            <div class="skill-items">
-              <div class="skill-item">
-                <i class="fab fa-html5"></i>
-                <span>HTML5</span>
-              </div>
-              <div class="skill-item">
-                <i class="fab fa-css3-alt"></i>
-                <span>CSS3</span>
-              </div>
-              <div class="skill-item">
-                <i class="fab fa-js-square"></i>
-                <span>JavaScript</span>
-              </div>
+            <div class="skill-items" id="web-skills">
+              <!-- Skills will be loaded from Firebase -->
             </div>
           </div>
 
           <div class="skill-category">
             <h3><i class="fas fa-mobile-alt"></i> Mobile Development</h3>
-            <div class="skill-items">
-              <div class="skill-item">
-                <i class="fas fa-mobile"></i>
-                <span>Flutter</span>
-              </div>
-              <div class="skill-item">
-                <i class="fas fa-fire"></i>
-                <span>Firebase</span>
-              </div>
+            <div class="skill-items" id="mobile-skills">
+              <!-- Skills will be loaded from Firebase -->
             </div>
           </div>
 
           <div class="skill-category">
             <h3><i class="fas fa-database"></i> Databases</h3>
-            <div class="skill-items">
-              <div class="skill-item">
-                <i class="fas fa-database"></i>
-                <span>MySQL</span>
-              </div>
-              <div class="skill-item">
-                <i class="fas fa-server"></i>
-                <span>Oracle</span>
-              </div>
+            <div class="skill-items" id="database-skills">
+              <!-- Skills will be loaded from Firebase -->
             </div>
           </div>
 
           <div class="skill-category">
             <h3><i class="fas fa-microchip"></i> IoT & Hardware</h3>
-            <div class="skill-items">
-              <div class="skill-item">
-                <i class="fas fa-microchip"></i>
-                <span>Arduino</span>
-              </div>
-              <div class="skill-item">
-                <i class="fas fa-wifi"></i>
-                <span>ESP32</span>
-              </div>
-              <div class="skill-item">
-                <i class="fas fa-sensor"></i>
-                <span>Sensors</span>
-              </div>
+            <div class="skill-items" id="iot-skills">
+              <!-- Skills will be loaded from Firebase -->
             </div>
           </div>
         </div>
@@ -221,7 +164,7 @@
             <div class="loading-spinner">
               <i class="fas fa-spinner fa-spin"></i>
             </div>
-            <p>Loading amazing projects...</p>
+            <p>Loading projects...</p>
           </div>
         </div>
       </div>
@@ -240,21 +183,25 @@
               <i class="fas fa-envelope"></i>
               <div>
                 <h4>Email</h4>
-                <p>hamood@example.com</p>
+                <p id="contact-email">Add your email through admin dashboard</p>
               </div>
             </div>
             <div class="contact-item">
               <i class="fas fa-map-marker-alt"></i>
               <div>
                 <h4>Location</h4>
-                <p>Colombo, Sri Lanka</p>
+                <p id="contact-location">
+                  Add your location through admin dashboard
+                </p>
               </div>
             </div>
             <div class="contact-item">
               <i class="fas fa-graduation-cap"></i>
               <div>
                 <h4>Education</h4>
-                <p>NIBM - Software Engineering</p>
+                <p id="contact-education">
+                  Add your education through admin dashboard
+                </p>
               </div>
             </div>
           </div>
@@ -291,10 +238,13 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-text">
-            <p>© 2025 Hamood Thariq. Built with 💻, 🚀, and ☕</p>
+            <p>
+              © 2025 <span id="footer-name">Your Name</span>. Built with 💻, 🚀,
+              and ☕
+            </p>
           </div>
           <div class="footer-links">
-            <a href="html/admin.html" class="admin-btn">
+            <a href="admin.html" class="admin-btn">
               <i class="fas fa-user-shield"></i>
               Admin Panel
             </a>
@@ -309,11 +259,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 
-    <!-- Firebase Config -->
-    <script src="firebase-config.js"></script>
-
-    <!-- Your Scripts -->
-    <script src="script/script-firebase.js" defer></script>
+             <!-- Firebase Config -->
+         <script src="firebase-config.js"></script>
+         <script src="script/script-firebase.js" defer></script>
     <div id="lightbox" onclick="closeMedia()">
       <div id="lightbox-content" onclick="event.stopPropagation()"></div>
     </div>
