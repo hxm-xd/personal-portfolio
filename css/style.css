@@ -196,12 +196,29 @@ body {
   transition: var(--transition);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  opacity: 0.5;
+  cursor: pointer;
 }
 
-.social-link:hover {
+.social-link[href]:not([href="#"]) {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.social-link[href="#"] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.social-link[href]:not([href="#"]):hover {
   background: var(--primary);
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
+}
+
+.social-link[href="#"]:hover {
+  cursor: not-allowed;
+  transform: none;
 }
 
 .social-link i {

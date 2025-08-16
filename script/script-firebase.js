@@ -73,18 +73,33 @@ async function loadPortfolioSettingsFromFirebase() {
 
     // Update social links
     if (portfolio.social) {
-      const socialLinks = document.querySelectorAll('.social-link');
-      if (portfolio.social.github && socialLinks[0]) {
-        socialLinks[0].href = portfolio.social.github;
+      console.log('Updating social links with:', portfolio.social);
+      
+      // Find social links by their icon classes to ensure correct order
+      const githubLink = document.querySelector('.social-link .fab.fa-github')?.parentElement;
+      const linkedinLink = document.querySelector('.social-link .fab.fa-linkedin')?.parentElement;
+      const twitterLink = document.querySelector('.social-link .fab.fa-twitter')?.parentElement;
+      const emailLink = document.querySelector('.social-link .fas.fa-envelope')?.parentElement;
+      
+      if (portfolio.social.github && githubLink) {
+        githubLink.href = portfolio.social.github;
+        githubLink.style.opacity = '1';
+        console.log('Updated GitHub link:', portfolio.social.github);
       }
-      if (portfolio.social.linkedin && socialLinks[1]) {
-        socialLinks[1].href = portfolio.social.linkedin;
+      if (portfolio.social.linkedin && linkedinLink) {
+        linkedinLink.href = portfolio.social.linkedin;
+        linkedinLink.style.opacity = '1';
+        console.log('Updated LinkedIn link:', portfolio.social.linkedin);
       }
-      if (portfolio.social.twitter && socialLinks[2]) {
-        socialLinks[2].href = portfolio.social.twitter;
+      if (portfolio.social.twitter && twitterLink) {
+        twitterLink.href = portfolio.social.twitter;
+        twitterLink.style.opacity = '1';
+        console.log('Updated Twitter link:', portfolio.social.twitter);
       }
-      if (portfolio.social.email && socialLinks[3]) {
-        socialLinks[3].href = `mailto:${portfolio.social.email}`;
+      if (portfolio.social.email && emailLink) {
+        emailLink.href = `mailto:${portfolio.social.email}`;
+        emailLink.style.opacity = '1';
+        console.log('Updated Email link:', portfolio.social.email);
       }
     }
 
