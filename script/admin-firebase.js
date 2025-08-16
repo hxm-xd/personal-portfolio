@@ -640,37 +640,49 @@ class AdminDashboard {
       }
     });
     
+    // Clean data function
+    const cleanData = (obj) => {
+      if (!obj) return {};
+      const cleaned = {};
+      Object.keys(obj).forEach(key => {
+        if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+          cleaned[key] = obj[key];
+        }
+      });
+      return cleaned;
+    };
+    
     // Handle different form types
     switch (formId) {
       case 'profile-form':
-        this.data.portfolio.profile = {
+        this.data.portfolio.profile = cleanData({
           name: formData['profile-name'],
           title: formData['profile-title'],
           subtitle: formData['profile-subtitle'],
           about: formData['profile-about']
-        };
+        });
         break;
       case 'social-form':
-        this.data.portfolio.social = {
+        this.data.portfolio.social = cleanData({
           github: formData['social-github'],
           linkedin: formData['social-linkedin'],
           twitter: formData['social-twitter'],
           email: formData['social-email']
-        };
+        });
         break;
       case 'stats-form':
-        this.data.portfolio.stats = {
+        this.data.portfolio.stats = cleanData({
           experience: formData['stats-experience'],
           projects: formData['stats-projects'],
           technologies: formData['stats-technologies']
-        };
+        });
         break;
       case 'contact-info-form':
-        this.data.portfolio.contact = {
+        this.data.portfolio.contact = cleanData({
           location: formData['contact-location'],
           email: formData['contact-email'],
           education: formData['contact-education']
-        };
+        });
         break;
       case 'password-form':
         await this.changePassword(formData);
