@@ -535,7 +535,7 @@ class AdminDashboard {
     this.data[dataKey].push(item);
     console.log('Item added to data:', this.data[dataKey]);
     
-    this.renderData(dataKey);
+    this.renderData(type);
     await this.saveData();
     
     if (dataKey === 'projects') {
@@ -585,7 +585,7 @@ class AdminDashboard {
     if (index === -1) return;
     
     this.data[dataKey][index] = { ...this.data[dataKey][index], ...updatedItem };
-    this.renderData(dataKey);
+    this.renderData(type);
     await this.saveData();
     
     if (dataKey === 'projects') {
@@ -607,7 +607,7 @@ class AdminDashboard {
     }
     
     this.data[dataKey] = this.data[dataKey].filter(item => item.id !== id);
-    this.renderData(dataKey);
+    this.renderData(type);
     await this.saveData();
     
     if (dataKey === 'projects') {
