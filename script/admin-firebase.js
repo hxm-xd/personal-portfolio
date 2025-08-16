@@ -222,8 +222,14 @@ class AdminDashboard {
   async loadCollection(collectionName, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Load contacts from public collection, others from user's private collection
+        if (collectionName === 'contacts') {
+          const snapshot = await window.db.collection('public').doc('portfolio').collection('contacts').get();
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+          const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
       } catch (error) {
         if (attempt === maxRetries) return [];
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
@@ -262,12 +268,19 @@ class AdminDashboard {
       };
 
       // Save collections
-      ['tasks', 'academics', 'contacts', 'projects'].forEach(collection => {
+      ['tasks', 'academics', 'projects'].forEach(collection => {
         console.log(`Saving ${collection}:`, this.data[collection]);
         this.data[collection].forEach(item => {
           const docRef = window.db.collection('users').doc(userId).collection(collection).doc(item.id);
           batch.set(docRef, cleanData(item));
         });
+      });
+      
+      // Save contacts to public collection (for marking as read)
+      console.log('Saving contacts:', this.data.contacts);
+      this.data.contacts.forEach(item => {
+        const docRef = window.db.collection('public').doc('portfolio').collection('contacts').doc(item.id);
+        batch.set(docRef, cleanData(item));
       });
 
       // Save documents with cleaned data
@@ -347,7 +360,32 @@ class AdminDashboard {
     container.innerHTML = items.map(item => {
       const statusClass = item.status ? `status-${item.status}` : '';
       const statusText = item.status ? item.status.replace('-', ' ') : '';
+      const readClass = item.read ? 'read' : 'unread';
       
+      // Special handling for contacts
+      if (type === 'contacts') {
+        return `
+          <div class="item-card ${readClass}">
+            <div class="item-content">
+              <h4 class="item-title">${item.name}</h4>
+              <p class="item-email">${item.email}</p>
+              <p class="item-description">${item.message}</p>
+              <span class="timestamp">${new Date(item.timestamp).toLocaleString()}</span>
+              ${!item.read ? '<span class="status-badge unread">New</span>' : ''}
+            </div>
+            <div class="item-actions">
+              <button onclick="markAsRead('${item.id}')" class="btn-secondary" title="Mark as read">
+                <i class="fas fa-check"></i>
+              </button>
+              <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Default handling for other items
       return `
         <div class="item-card ${statusClass}">
           <div class="item-content">
@@ -1191,6 +1229,16 @@ function markAllRead() {
   adminDashboard.renderData('contacts');
   adminDashboard.saveData();
   adminDashboard.showNotification('All contacts marked as read!', 'success');
+}
+
+function markAsRead(contactId) {
+  const contact = adminDashboard.data.contacts.find(c => c.id === contactId);
+  if (contact) {
+    contact.read = true;
+    adminDashboard.renderData('contacts');
+    adminDashboard.saveData();
+    adminDashboard.showNotification('Contact marked as read!', 'success');
+  }
 }
 
 let currentSkillCategory = null;

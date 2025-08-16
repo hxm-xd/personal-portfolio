@@ -2174,3 +2174,30 @@ body {
     margin: 1rem;
   }
 }
+
+/* Contact-specific styles */
+.item-card.unread {
+  border-left: 4px solid var(--primary);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.item-card.read {
+  opacity: 0.8;
+}
+
+.item-email {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0.25rem 0;
+}
+
+.timestamp {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+.status-badge.unread {
+  background: var(--primary);
+  color: white;
+}
