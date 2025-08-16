@@ -213,6 +213,20 @@ class AdminDashboard {
 
       console.log('Loaded contacts:', this.data.contacts);
       console.log('Contacts array length:', this.data.contacts.length);
+      
+      // Add a test contact if none exist (for debugging)
+      if (this.data.contacts.length === 0) {
+        console.log('No contacts found, adding test contact...');
+        this.data.contacts.push({
+          id: 'test-contact-1',
+          name: 'Test User',
+          email: 'test@example.com',
+          message: 'This is a test message to verify the contact display is working.',
+          timestamp: new Date().toISOString(),
+          read: false
+        });
+        console.log('Test contact added:', this.data.contacts);
+      }
 
       this.renderAllData();
       this.loadPortfolioSettings();
@@ -340,6 +354,7 @@ class AdminDashboard {
     if (type === 'contacts') {
       container = document.getElementById('contacts-list');
       console.log('Contacts container found:', container);
+      console.log('Contacts data:', this.data.contacts);
     } else {
       container = document.getElementById(dataKey === 'projects' ? 'projects-list' : `${dataKey}-list`);
     }
