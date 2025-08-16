@@ -621,9 +621,11 @@ class AdminDashboard {
     const formData = {};
     const form = document.getElementById(formId);
     
-    // Collect form data
+    // Collect form data - only include non-empty values
     form.querySelectorAll('input, textarea').forEach(input => {
-      if (input.value) formData[input.id] = input.value;
+      if (input.value && input.value.trim() !== '') {
+        formData[input.id] = input.value.trim();
+      }
     });
     
     // Handle different form types
@@ -693,12 +695,24 @@ class AdminDashboard {
 
   async saveToPublicPortfolio() {
     try {
+      // Clean data to remove undefined values
+      const cleanData = (obj) => {
+        if (!obj) return {};
+        const cleaned = {};
+        Object.keys(obj).forEach(key => {
+          if (obj[key] !== undefined && obj[key] !== null) {
+            cleaned[key] = obj[key];
+          }
+        });
+        return cleaned;
+      };
+
       await window.db.collection('public').doc('portfolio').set({
-        profile: this.data.portfolio.profile || {},
-        social: this.data.portfolio.social || {},
-        stats: this.data.portfolio.stats || {},
-        contact: this.data.portfolio.contact || {},
-        skills: this.data.portfolio.skills || {},
+        profile: cleanData(this.data.portfolio.profile),
+        social: cleanData(this.data.portfolio.social),
+        stats: cleanData(this.data.portfolio.stats),
+        contact: cleanData(this.data.portfolio.contact),
+        skills: cleanData(this.data.portfolio.skills),
         profileImage: this.data.portfolio.profileImage || '',
         lastUpdated: new Date().toISOString()
       }, { merge: true });
