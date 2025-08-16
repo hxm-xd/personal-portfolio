@@ -315,7 +315,7 @@ class AdminDashboard {
 
   renderData(type) {
     // Map type to correct data key
-    const dataKey = type === 'project' ? 'projects' : type;
+    const dataKey = type === 'project' ? 'projects' : type + 's';
     
     console.log('Rendering data for:', type, 'using dataKey:', dataKey, this.data[dataKey]);
     
@@ -725,7 +725,7 @@ class AdminDashboard {
     console.log('Adding item:', type, item);
     
     // Map type to correct data key
-    const dataKey = type === 'project' ? 'projects' : type;
+    const dataKey = type === 'project' ? 'projects' : type + 's';
     
     // Ensure the array exists
     if (!this.data[dataKey]) {
@@ -748,7 +748,7 @@ class AdminDashboard {
 
   editItem(type, id) {
     // Map type to correct data key
-    const dataKey = type === 'project' ? 'projects' : type;
+    const dataKey = type === 'project' ? 'projects' : type + 's';
     
     // Ensure the array exists
     if (!this.data[dataKey]) {
@@ -775,7 +775,7 @@ class AdminDashboard {
 
   async updateItem(type, id, updatedItem) {
     // Map type to correct data key
-    const dataKey = type === 'project' ? 'projects' : type;
+    const dataKey = type === 'project' ? 'projects' : type + 's';
     
     // Ensure the array exists
     if (!this.data[dataKey]) {
@@ -800,7 +800,7 @@ class AdminDashboard {
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
     
     // Map type to correct data key
-    const dataKey = type === 'project' ? 'projects' : type;
+    const dataKey = type === 'project' ? 'projects' : type + 's';
     
     // Ensure the array exists
     if (!this.data[dataKey]) {
