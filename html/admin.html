@@ -18,13 +18,12 @@
         <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
         <form id="login-form">
           <div class="input-group">
-            <input type="email" id="email" placeholder="Email" required />
+                            <input type="email" id="email" required />
           </div>
           <div class="input-group">
             <input
               type="password"
               id="password"
-              placeholder="Password"
               required
             />
           </div>
@@ -209,7 +208,6 @@
             <input
               type="text"
               id="task-search"
-              placeholder="Search tasks..."
               onkeyup="searchTasks()"
             />
             <select id="task-filter" onchange="filterTasks()">
@@ -272,7 +270,6 @@
                   <input
                     type="text"
                     id="profile-name"
-                    placeholder="Your Full Name"
                     required
                   />
                 </div>
@@ -281,7 +278,6 @@
                   <input
                     type="text"
                     id="profile-title"
-                    placeholder="e.g., Software Engineering Student"
                     required
                   />
                 </div>
@@ -290,15 +286,12 @@
                   <input
                     type="text"
                     id="profile-subtitle"
-                    placeholder="e.g., IoT & Robotics Enthusiast"
-                    required
                   />
                 </div>
                 <div class="form-group">
                   <label>About Me</label>
                   <textarea
                     id="profile-about"
-                    placeholder="Tell visitors about yourself..."
                     rows="4"
                     required
                   ></textarea>
@@ -358,7 +351,6 @@
                   <input
                     type="url"
                     id="social-github"
-                    placeholder="https://github.com/yourusername"
                   />
                 </div>
                 <div class="form-group">
@@ -366,7 +358,6 @@
                   <input
                     type="url"
                     id="social-linkedin"
-                    placeholder="https://linkedin.com/in/yourusername"
                   />
                 </div>
                 <div class="form-group">
@@ -374,7 +365,6 @@
                   <input
                     type="url"
                     id="social-twitter"
-                    placeholder="https://twitter.com/yourusername"
                   />
                 </div>
                 <div class="form-group">
@@ -382,7 +372,6 @@
                   <input
                     type="email"
                     id="social-email"
-                    placeholder="your.email@example.com"
                   />
                 </div>
                 <button type="submit" class="btn-primary">
@@ -400,7 +389,6 @@
                   <input
                     type="number"
                     id="stats-experience"
-                    placeholder="3"
                     min="0"
                     max="50"
                   />
@@ -410,7 +398,6 @@
                   <input
                     type="number"
                     id="stats-projects"
-                    placeholder="15"
                     min="0"
                     max="1000"
                   />
@@ -420,7 +407,6 @@
                   <input
                     type="number"
                     id="stats-technologies"
-                    placeholder="5"
                     min="0"
                     max="100"
                   />
@@ -440,7 +426,6 @@
                   <input
                     type="text"
                     id="contact-location"
-                    placeholder="e.g., Colombo, Sri Lanka"
                   />
                 </div>
                 <div class="form-group">
@@ -448,7 +433,6 @@
                   <input
                     type="email"
                     id="contact-email"
-                    placeholder="your.email@example.com"
                   />
                 </div>
                 <div class="form-group">
@@ -456,7 +440,6 @@
                   <input
                     type="text"
                     id="contact-education"
-                    placeholder="e.g., BSc in Software Engineering, NIBM"
                   />
                 </div>
                 <button type="submit" class="btn-primary">
@@ -594,24 +577,30 @@
             <div class="settings-card">
               <h3><i class="fas fa-key"></i> Change Password</h3>
               <form id="password-form">
-                <input
-                  type="password"
-                  id="current-password"
-                  placeholder="Current Password"
-                  required
-                />
-                <input
-                  type="password"
-                  id="new-password"
-                  placeholder="New Password"
-                  required
-                />
-                <input
-                  type="password"
-                  id="confirm-password"
-                  placeholder="Confirm Password"
-                  required
-                />
+                <div class="form-group">
+                  <label>Current Password</label>
+                  <input
+                    type="password"
+                    id="current-password"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label>New Password</label>
+                  <input
+                    type="password"
+                    id="new-password"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Confirm New Password</label>
+                  <input
+                    type="password"
+                    id="confirm-password"
+                    required
+                  />
+                </div>
                 <button type="submit" class="btn-primary">
                   <i class="fas fa-save"></i>
                   Change Password
