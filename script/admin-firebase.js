@@ -314,20 +314,23 @@ class AdminDashboard {
   }
 
   renderData(type) {
-    console.log('Rendering data for:', type, this.data[type]);
+    // Map type to correct data key
+    const dataKey = type === 'project' ? 'projects' : type;
     
-    const container = document.getElementById(type === 'projects' ? 'projects-list' : `${type}-list`);
+    console.log('Rendering data for:', type, 'using dataKey:', dataKey, this.data[dataKey]);
+    
+    const container = document.getElementById(dataKey === 'projects' ? 'projects-list' : `${dataKey}-list`);
     if (!container) {
-      console.error('Container not found for:', type);
+      console.error('Container not found for:', dataKey);
       return;
     }
 
     // Ensure the array exists
-    if (!this.data[type]) {
-      this.data[type] = [];
+    if (!this.data[dataKey]) {
+      this.data[dataKey] = [];
     }
 
-    const items = this.data[type];
+    const items = this.data[dataKey];
     console.log('Items to render:', items);
     
     if (items.length === 0) {
