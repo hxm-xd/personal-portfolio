@@ -21,6 +21,12 @@ class AdminDashboard {
     this.setupEvents();
     await this.checkAuth();
     this.setupRealtimeListeners();
+    
+    // Ensure contact count is updated after authentication
+    if (this.user) {
+      await this.refreshContactsData();
+    }
+    
     this.showNotification('Welcome to Admin Dashboard!', 'success');
   }
 
@@ -270,6 +276,13 @@ class AdminDashboard {
     document.getElementById('admin-dashboard').style.display = 'block';
     setTimeout(() => this.setupPortfolioForms(), 100);
     this.switchTab('overview');
+    
+    // Ensure contact count is updated when dashboard is shown
+    setTimeout(() => {
+      if (this.data.contacts) {
+        this.updateContactCount();
+      }
+    }, 500);
   }
 
   async loadData() {
@@ -309,6 +322,11 @@ class AdminDashboard {
       this.renderAllData();
       this.loadPortfolioSettings();
       this.updateContactCount();
+      
+      // Force update contact count again after a short delay to ensure UI is ready
+      setTimeout(() => {
+        this.updateContactCount();
+      }, 1000);
     } catch (error) {
       console.error('Error loading data:', error);
       this.showNotification('Error loading data: ' + error.message, 'error');
@@ -442,6 +460,9 @@ class AdminDashboard {
     // Show/hide tabs
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById(tab).classList.add('active');
+    
+    // Always update contact count when switching tabs
+    this.updateContactCount();
     
     // Load specific data
     if (tab === 'overview') {
