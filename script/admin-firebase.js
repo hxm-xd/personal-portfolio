@@ -157,9 +157,24 @@ class AdminDashboard {
 
   updateContactCount() {
     const contactCount = this.data.contacts.filter(contact => !contact.read).length;
+    const totalCount = this.data.contacts.length;
+    
+    // Update overview count
     const contactCountElement = document.getElementById('contact-count');
     if (contactCountElement) {
       contactCountElement.textContent = contactCount;
+    }
+    
+    // Update Messages tab header count
+    const messagesCountElement = document.getElementById('messages-count');
+    const messagesCountTextElement = document.getElementById('messages-count-text');
+    if (messagesCountElement && messagesCountTextElement) {
+      if (totalCount > 0) {
+        messagesCountTextElement.textContent = `${totalCount} message${totalCount !== 1 ? 's' : ''}`;
+        messagesCountElement.style.display = 'inline-flex';
+      } else {
+        messagesCountElement.style.display = 'none';
+      }
     }
     
     // Update the Messages tab button with badge
@@ -569,13 +584,27 @@ class AdminDashboard {
     
     if (items.length === 0) {
       console.log('No items to render, showing empty state');
-      container.innerHTML = `
-        <div class="empty-state">
-          <i class="fas fa-${type === 'tasks' ? 'tasks' : type === 'academics' ? 'graduation-cap' : type === 'contacts' ? 'envelope' : 'briefcase'}"></i>
-          <h3>No ${type} yet</h3>
-          <p>Add your first ${type.slice(0, -1)} to get started.</p>
-        </div>
-      `;
+      if (type === 'contacts') {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-envelope-open"></i>
+            <h3>No Messages Yet</h3>
+            <p>When visitors send you messages through your portfolio, they'll appear here.</p>
+            <button onclick="addTestContact()" class="btn-primary" style="margin-top: 1rem;">
+              <i class="fas fa-plus"></i>
+              Add Test Message
+            </button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-${type === 'tasks' ? 'tasks' : type === 'academics' ? 'graduation-cap' : 'briefcase'}"></i>
+            <h3>No ${type} yet</h3>
+            <p>Add your first ${type.slice(0, -1)} to get started.</p>
+          </div>
+        `;
+      }
       return;
     }
 

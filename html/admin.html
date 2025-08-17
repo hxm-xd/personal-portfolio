@@ -230,7 +230,17 @@
         <!-- Messages Tab -->
         <div id="contacts" class="tab">
           <div class="tab-header">
-            <h2><i class="fas fa-envelope"></i> Messages</h2>
+            <div class="tab-title">
+              <h2><i class="fas fa-envelope"></i> Messages</h2>
+              <span
+                id="messages-count"
+                class="messages-count"
+                style="display: none"
+              >
+                <i class="fas fa-envelope"></i>
+                <span id="messages-count-text">0</span>
+              </span>
+            </div>
             <div class="tab-actions">
               <button
                 onclick="adminDashboard.refreshContactsData()"
