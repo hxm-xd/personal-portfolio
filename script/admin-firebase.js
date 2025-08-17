@@ -159,10 +159,17 @@ class AdminDashboard {
     const contactCount = this.data.contacts.filter(contact => !contact.read).length;
     const totalCount = this.data.contacts.length;
     
+    console.log('=== UPDATING CONTACT COUNT ===');
+    console.log('Unread contacts:', contactCount);
+    console.log('Total contacts:', totalCount);
+    
     // Update overview count
     const contactCountElement = document.getElementById('contact-count');
     if (contactCountElement) {
       contactCountElement.textContent = contactCount;
+      console.log('Updated overview count to:', contactCount);
+    } else {
+      console.log('Overview count element not found');
     }
     
     // Update Messages tab header count
@@ -172,18 +179,25 @@ class AdminDashboard {
       if (totalCount > 0) {
         messagesCountTextElement.textContent = `${totalCount} message${totalCount !== 1 ? 's' : ''}`;
         messagesCountElement.style.display = 'inline-flex';
+        console.log('Updated header count to:', totalCount);
       } else {
         messagesCountElement.style.display = 'none';
+        console.log('Hidden header count (no messages)');
       }
+    } else {
+      console.log('Header count elements not found');
     }
     
     // Update the Messages tab button with badge
     const messagesTabBtn = document.querySelector('[data-tab="contacts"]');
+    console.log('Messages tab button found:', !!messagesTabBtn);
+    
     if (messagesTabBtn) {
       // Remove existing badge
       const existingBadge = messagesTabBtn.querySelector('.tab-badge');
       if (existingBadge) {
         existingBadge.remove();
+        console.log('Removed existing badge');
       }
       
       // Add new badge if there are unread messages
@@ -191,7 +205,16 @@ class AdminDashboard {
         const badge = document.createElement('span');
         badge.className = 'tab-badge';
         badge.textContent = contactCount;
+        badge.style.display = 'flex'; // Ensure visibility
         messagesTabBtn.appendChild(badge);
+        console.log('Added new badge with count:', contactCount);
+        
+        // Force a reflow to ensure the badge is visible
+        setTimeout(() => {
+          badge.style.display = 'flex';
+        }, 10);
+      } else {
+        console.log('No unread messages, no badge needed');
       }
     }
   }
@@ -1192,6 +1215,11 @@ class AdminDashboard {
       console.log('Re-rendering data...');
       this.renderData(type);
       
+      // Update contact count if this was a contact deletion
+      if (type === 'contacts') {
+        this.updateContactCount();
+      }
+      
       // Save data (for non-contact items)
       if (type !== 'contacts') {
         await this.saveData();
@@ -1892,5 +1920,32 @@ function testDeleteFirstContact() {
     adminDashboard.deleteItem('contacts', firstContact.id);
   } else {
     console.log('No contacts available to delete');
+  }
+}
+
+// Test badge update function
+function testBadgeUpdate() {
+  console.log('=== TESTING BADGE UPDATE ===');
+  if (adminDashboard) {
+    adminDashboard.updateContactCount();
+  }
+  
+  // Also test manually creating a badge
+  const messagesTabBtn = document.querySelector('[data-tab="contacts"]');
+  if (messagesTabBtn) {
+    // Remove existing badge
+    const existingBadge = messagesTabBtn.querySelector('.tab-badge');
+    if (existingBadge) {
+      existingBadge.remove();
+    }
+    
+    // Add a test badge
+    const badge = document.createElement('span');
+    badge.className = 'tab-badge';
+    badge.textContent = '5';
+    badge.style.display = 'flex';
+    badge.style.zIndex = '1000';
+    messagesTabBtn.appendChild(badge);
+    console.log('Added test badge');
   }
 }
