@@ -80,35 +80,58 @@ class AdminDashboard {
   setupRealtimeListeners() {
     // Listen for new contact messages in real-time
     if (typeof window.db !== 'undefined') {
+      console.log('Setting up real-time listeners...');
       const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
       
       contactsRef.onSnapshot((snapshot) => {
+        console.log('Real-time update received:', snapshot.docChanges().length, 'changes');
+        let hasChanges = false;
+        
         snapshot.docChanges().forEach((change) => {
+          console.log('Change type:', change.type, 'Document ID:', change.doc.id);
           if (change.type === 'added') {
             // New message received
+            console.log('New contact message received:', change.doc.data());
             this.showNotification('New message received!', 'info');
-            
-            // Always refresh contacts data and update count
-            this.refreshContactsData();
-            this.updateContactCount();
+            hasChanges = true;
+          } else if (change.type === 'modified') {
+            // Message was modified (e.g., marked as read)
+            console.log('Contact message modified:', change.doc.data());
+            hasChanges = true;
+          } else if (change.type === 'removed') {
+            // Message was deleted
+            console.log('Contact message removed:', change.doc.id);
+            hasChanges = true;
           }
         });
+        
+        // Refresh data if there were any changes
+        if (hasChanges) {
+          console.log('Changes detected, refreshing contacts data...');
+          this.refreshContactsData();
+        }
       }, (error) => {
         console.error('Error setting up real-time listener:', error);
       });
+    } else {
+      console.log('Firebase not available for real-time listeners');
     }
   }
 
 
 
   updateContactCount() {
+    console.log('Updating contact count...');
     const contactCount = this.data.contacts.filter(contact => !contact.read).length;
     const totalCount = this.data.contacts.length;
+    
+    console.log(`Unread contacts: ${contactCount}, Total contacts: ${totalCount}`);
     
     // Update overview count
     const contactCountElement = document.getElementById('contact-count');
     if (contactCountElement) {
       contactCountElement.textContent = contactCount;
+      console.log('Updated overview contact count');
     }
     
     // Update Messages tab header count
@@ -118,6 +141,7 @@ class AdminDashboard {
       if (totalCount > 0) {
         messagesCountTextElement.textContent = `${totalCount} message${totalCount !== 1 ? 's' : ''}`;
         messagesCountElement.style.display = 'inline-flex';
+        console.log('Updated messages count display');
       } else {
         messagesCountElement.style.display = 'none';
       }
@@ -139,6 +163,7 @@ class AdminDashboard {
         badge.textContent = contactCount;
         badge.style.display = 'flex';
         messagesTabBtn.appendChild(badge);
+        console.log('Added badge to messages tab');
       }
     }
   }
@@ -291,6 +316,7 @@ class AdminDashboard {
   }
 
   async refreshContactsData() {
+    console.log('Refreshing contacts data...');
     const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
     const originalText = refreshBtn ? refreshBtn.innerHTML : '';
     
@@ -301,10 +327,12 @@ class AdminDashboard {
     
     try {
       const contacts = await this.loadCollection('contacts');
+      console.log('Loaded contacts:', contacts);
       this.data.contacts = contacts;
       this.renderData('contacts');
       this.updateContactCount();
       
+      console.log('Contacts refreshed successfully');
       this.showNotification('Messages refreshed successfully!', 'success');
     } catch (error) {
       console.error('Error refreshing contacts:', error);
@@ -322,9 +350,12 @@ class AdminDashboard {
       try {
         // Load contacts from public collection, others from user's private collection
         if (collectionName === 'contacts') {
+          console.log('Loading contacts from public collection...');
           const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
           const snapshot = await contactsRef.get();
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('Loaded contacts:', contacts);
+          return contacts;
         } else {
           const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
           return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -431,6 +462,7 @@ class AdminDashboard {
   }
 
   renderData(type) {
+    console.log(`Rendering data for type: ${type}`);
     // Map type to correct data key
     let dataKey;
     if (type === 'project') {
@@ -440,6 +472,8 @@ class AdminDashboard {
     } else {
       dataKey = type + 's';
     }
+    
+    console.log(`Data key: ${dataKey}, Items count: ${this.data[dataKey]?.length || 0}`);
     
     // Special handling for contacts container
     let container;
@@ -542,7 +576,9 @@ class AdminDashboard {
     });
     
     const finalHtml = html.join('');
+    console.log(`Setting container HTML for ${type}, length: ${finalHtml.length}`);
     container.innerHTML = finalHtml;
+    console.log(`Rendered ${type} data successfully`);
   }
 
   renderAllData() {
