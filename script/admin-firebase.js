@@ -109,67 +109,16 @@ class AdminDashboard {
     }
   }
 
-  // Diagnostic function to check Firebase connection and permissions
-  async runDiagnostics() {
-    console.log('=== RUNNING FIREBASE DIAGNOSTICS ===');
-    
-    try {
-      // Check if Firebase is available
-      if (typeof window.db === 'undefined') {
-        console.error('Firebase db is not available');
-        this.showNotification('Firebase not initialized', 'error');
-        return;
-      }
-      
-      console.log('Firebase db is available');
-      
-      // Test basic connection
-      const testDoc = await window.db.collection('public').doc('portfolio').get();
-      console.log('Portfolio document exists:', testDoc.exists);
-      
-      // Test contacts collection access
-      const contactsSnapshot = await window.db.collection('public').doc('portfolio').collection('contacts').get();
-      console.log('Contacts collection accessible, found', contactsSnapshot.docs.length, 'documents');
-      
-      // Test adding a document
-      const testContact = {
-        name: 'Diagnostic Test',
-        email: 'test@diagnostic.com',
-        message: 'This is a diagnostic test message',
-        timestamp: new Date().toISOString(),
-        read: false
-      };
-      
-      const docRef = await window.db.collection('public').doc('portfolio').collection('contacts').add(testContact);
-      console.log('Successfully added test contact with ID:', docRef.id);
-      
-      // Clean up - delete the test document
-      await docRef.delete();
-      console.log('Test contact cleaned up');
-      
-      this.showNotification('Firebase diagnostics completed successfully', 'success');
-      
-    } catch (error) {
-      console.error('Firebase diagnostics failed:', error);
-      this.showNotification('Firebase diagnostics failed: ' + error.message, 'error');
-    }
-  }
+
 
   updateContactCount() {
     const contactCount = this.data.contacts.filter(contact => !contact.read).length;
     const totalCount = this.data.contacts.length;
     
-    console.log('=== UPDATING CONTACT COUNT ===');
-    console.log('Unread contacts:', contactCount);
-    console.log('Total contacts:', totalCount);
-    
     // Update overview count
     const contactCountElement = document.getElementById('contact-count');
     if (contactCountElement) {
       contactCountElement.textContent = contactCount;
-      console.log('Updated overview count to:', contactCount);
-    } else {
-      console.log('Overview count element not found');
     }
     
     // Update Messages tab header count
@@ -179,25 +128,18 @@ class AdminDashboard {
       if (totalCount > 0) {
         messagesCountTextElement.textContent = `${totalCount} message${totalCount !== 1 ? 's' : ''}`;
         messagesCountElement.style.display = 'inline-flex';
-        console.log('Updated header count to:', totalCount);
       } else {
         messagesCountElement.style.display = 'none';
-        console.log('Hidden header count (no messages)');
       }
-    } else {
-      console.log('Header count elements not found');
     }
     
     // Update the Messages tab button with badge
     const messagesTabBtn = document.querySelector('[data-tab="contacts"]');
-    console.log('Messages tab button found:', !!messagesTabBtn);
-    
     if (messagesTabBtn) {
       // Remove existing badge
       const existingBadge = messagesTabBtn.querySelector('.tab-badge');
       if (existingBadge) {
         existingBadge.remove();
-        console.log('Removed existing badge');
       }
       
       // Add new badge if there are unread messages
@@ -205,16 +147,8 @@ class AdminDashboard {
         const badge = document.createElement('span');
         badge.className = 'tab-badge';
         badge.textContent = contactCount;
-        badge.style.display = 'flex'; // Ensure visibility
+        badge.style.display = 'flex';
         messagesTabBtn.appendChild(badge);
-        console.log('Added new badge with count:', contactCount);
-        
-        // Force a reflow to ensure the badge is visible
-        setTimeout(() => {
-          badge.style.display = 'flex';
-        }, 10);
-      } else {
-        console.log('No unread messages, no badge needed');
       }
     }
   }
@@ -367,106 +301,50 @@ class AdminDashboard {
   }
 
   async refreshContactsData() {
+    const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
+    const originalText = refreshBtn ? refreshBtn.innerHTML : '';
+    
+    if (refreshBtn) {
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    }
+    
     try {
-      console.log('=== REFRESHING CONTACTS DATA ===');
-      console.log('Current user:', this.user);
-      console.log('Firebase db available:', typeof window.db !== 'undefined');
-      
-      // Show loading state on refresh button
-      const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
-      const originalText = refreshBtn ? refreshBtn.innerHTML : '';
-      if (refreshBtn) {
-        refreshBtn.disabled = true;
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
-      }
-      
-      // Load fresh contacts data from Firebase
-      console.log('Calling loadCollection for contacts...');
       const contacts = await this.loadCollection('contacts');
-      console.log('Raw contacts from Firebase:', contacts);
-      
       this.data.contacts = contacts;
-      
-      console.log('Updated data.contacts:', this.data.contacts);
-      console.log('Contacts array length:', this.data.contacts.length);
-      
-      // Test: Check if data is actually there
-      console.log('=== DATA VERIFICATION ===');
-      console.log('this.data.contacts exists:', !!this.data.contacts);
-      console.log('this.data.contacts is array:', Array.isArray(this.data.contacts));
-      console.log('this.data.contacts.length:', this.data.contacts.length);
-      if (this.data.contacts.length > 0) {
-        console.log('First contact:', this.data.contacts[0]);
-      }
-      
-      // Render the contacts immediately
-      console.log('Rendering contacts data...');
       this.renderData('contacts');
+      this.updateContactCount();
       
-      // Update the contact count in overview
-      const contactCount = this.data.contacts.filter(contact => !contact.read).length;
-      console.log('Unread contact count:', contactCount);
-      const contactCountElement = document.getElementById('contact-count');
-      if (contactCountElement) {
-        contactCountElement.textContent = contactCount;
-      }
-      
-      console.log('Contacts refreshed successfully');
       this.showNotification('Messages refreshed successfully!', 'success');
-      
-      // Reset refresh button
+    } catch (error) {
+      console.error('Error refreshing contacts:', error);
+      this.showNotification('Error refreshing contacts: ' + error.message, 'error');
+    } finally {
       if (refreshBtn) {
         refreshBtn.disabled = false;
         refreshBtn.innerHTML = originalText;
-      }
-    } catch (error) {
-      console.error('Error refreshing contacts:', error);
-      console.error('Error stack:', error.stack);
-      this.showNotification('Error refreshing contacts: ' + error.message, 'error');
-      
-      // Reset refresh button on error
-      const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
-      if (refreshBtn) {
-        refreshBtn.disabled = false;
-        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
       }
     }
   }
 
   async loadCollection(collectionName, maxRetries = 3) {
-    console.log(`=== LOADING COLLECTION: ${collectionName} ===`);
-    console.log('Max retries:', maxRetries);
-    console.log('Firebase db available:', typeof window.db !== 'undefined');
-    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Attempt ${attempt}/${maxRetries} for ${collectionName}`);
-        
         // Load contacts from public collection, others from user's private collection
         if (collectionName === 'contacts') {
-          console.log('Loading contacts from public collection...');
           const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
-          console.log('Contacts reference:', contactsRef);
-          
           const snapshot = await contactsRef.get();
-          console.log('Contacts snapshot:', snapshot);
-          console.log('Number of contacts found:', snapshot.docs.length);
-          
-          const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          console.log('Processed contacts:', contacts);
-          return contacts;
+          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } else {
-          console.log(`Loading ${collectionName} from user's private collection...`);
           const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
           return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
       } catch (error) {
-        console.error(`Error on attempt ${attempt} for ${collectionName}:`, error);
+        console.error(`Error loading ${collectionName}:`, error);
         if (attempt === maxRetries) {
-          console.error(`All ${maxRetries} attempts failed for ${collectionName}`);
           return [];
         }
-        console.log(`Waiting ${1000 * attempt}ms before retry...`);
+        // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
@@ -565,32 +443,26 @@ class AdminDashboard {
   }
 
   renderData(type) {
-    console.log(`=== RENDERING DATA FOR: ${type} ===`);
-    
     // Map type to correct data key
     let dataKey;
     if (type === 'project') {
       dataKey = 'projects';
     } else if (type === 'contacts') {
-      dataKey = 'contacts'; // Don't add 's' for contacts
+      dataKey = 'contacts';
     } else {
       dataKey = type + 's';
     }
-    
-    console.log('Rendering data for:', type, 'using dataKey:', dataKey, this.data[dataKey]);
     
     // Special handling for contacts container
     let container;
     if (type === 'contacts') {
       container = document.getElementById('contacts-list');
-      console.log('Contacts container found:', container);
-      console.log('Contacts data:', this.data.contacts);
     } else {
       container = document.getElementById(dataKey === 'projects' ? 'projects-list' : `${dataKey}-list`);
     }
     
     if (!container) {
-      console.error('Container not found for:', type, 'dataKey:', dataKey);
+      console.error('Container not found for:', type);
       return;
     }
 
@@ -600,23 +472,14 @@ class AdminDashboard {
     }
 
     const items = this.data[dataKey];
-    console.log('Items to render:', items);
-    console.log('Items length:', items.length);
-    console.log('Data key being used:', dataKey);
-    console.log('Actual data in this.data[dataKey]:', this.data[dataKey]);
     
     if (items.length === 0) {
-      console.log('No items to render, showing empty state');
       if (type === 'contacts') {
         container.innerHTML = `
           <div class="empty-state">
             <i class="fas fa-envelope-open"></i>
             <h3>No Messages Yet</h3>
             <p>When visitors send you messages through your portfolio, they'll appear here.</p>
-            <button onclick="addTestContact()" class="btn-primary" style="margin-top: 1rem;">
-              <i class="fas fa-plus"></i>
-              Add Test Message
-            </button>
           </div>
         `;
       } else {
@@ -631,15 +494,11 @@ class AdminDashboard {
       return;
     }
 
-    console.log('About to generate HTML for', items.length, 'items');
     const html = items.map(item => {
-      const statusClass = item.status ? `status-${item.status}` : '';
-      const statusText = item.status ? item.status.replace('-', ' ') : '';
       const readClass = item.read ? 'read' : 'unread';
       
       // Special handling for contacts
       if (type === 'contacts') {
-        console.log('Generating HTML for contact:', item);
         return `
           <div class="item-card ${readClass}">
             <div class="item-content">
@@ -1164,12 +1023,7 @@ class AdminDashboard {
   }
 
   async deleteItem(type, id) {
-    console.log('=== DELETING ITEM ===');
-    console.log('Type:', type, 'ID:', id);
-    console.log('this.data before deletion:', this.data);
-    
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
-      console.log('User cancelled deletion');
       return;
     }
     
@@ -1184,9 +1038,6 @@ class AdminDashboard {
         dataKey = type + 's';
       }
       
-      console.log('Using dataKey:', dataKey);
-      console.log('Data before deletion:', this.data[dataKey]);
-      
       // Ensure the array exists
       if (!this.data[dataKey]) {
         this.data[dataKey] = [];
@@ -1194,31 +1045,21 @@ class AdminDashboard {
       
       // Find the item to delete
       const itemToDelete = this.data[dataKey].find(item => item.id === id);
-      console.log('Item to delete:', itemToDelete);
       
       if (!itemToDelete) {
-        console.error('Item not found with ID:', id);
         this.showNotification('Item not found!', 'error');
         return;
       }
       
       // Remove from local data
-      const originalLength = this.data[dataKey].length;
       this.data[dataKey] = this.data[dataKey].filter(item => item.id !== id);
-      const newLength = this.data[dataKey].length;
-      
-      console.log('Items removed from local data:', originalLength - newLength);
-      console.log('Data after local deletion:', this.data[dataKey]);
       
       // For contacts, also delete from Firebase
       if (type === 'contacts') {
-        console.log('Deleting contact from Firebase...');
-        const deleteResult = await window.db.collection('public').doc('portfolio').collection('contacts').doc(id).delete();
-        console.log('Contact deleted from Firebase successfully:', deleteResult);
+        await window.db.collection('public').doc('portfolio').collection('contacts').doc(id).delete();
       }
       
       // Re-render the data
-      console.log('Re-rendering data...');
       this.renderData(type);
       
       // Update contact count if this was a contact deletion
@@ -1235,12 +1076,10 @@ class AdminDashboard {
         await this.saveToPublicPortfolio();
       }
       
-      console.log('Deletion completed successfully');
       this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
       
     } catch (error) {
       console.error('Error deleting item:', error);
-      console.error('Error stack:', error.stack);
       this.showNotification('Error deleting item: ' + error.message, 'error');
     }
   }
@@ -1677,8 +1516,6 @@ async function resetProfileImage() {
 }
 
 function markAllRead() {
-  console.log('=== MARKING ALL AS READ ===');
-  
   if (adminDashboard.data.contacts.length === 0) {
     adminDashboard.showNotification('No contacts to mark as read!', 'info');
     return;
@@ -1692,8 +1529,6 @@ function markAllRead() {
   });
   
   Promise.all(updatePromises).then(() => {
-    console.log('All contacts marked as read in Firebase');
-    
     // Update local data
     adminDashboard.data.contacts.forEach(contact => contact.read = true);
     adminDashboard.renderData('contacts');
@@ -1706,8 +1541,6 @@ function markAllRead() {
 }
 
 function markAllUnread() {
-  console.log('=== MARKING ALL AS UNREAD ===');
-  
   if (adminDashboard.data.contacts.length === 0) {
     adminDashboard.showNotification('No contacts to mark as unread!', 'info');
     return;
@@ -1721,8 +1554,6 @@ function markAllUnread() {
   });
   
   Promise.all(updatePromises).then(() => {
-    console.log('All contacts marked as unread in Firebase');
-    
     // Update local data
     adminDashboard.data.contacts.forEach(contact => contact.read = false);
     adminDashboard.renderData('contacts');
@@ -1735,19 +1566,14 @@ function markAllUnread() {
 }
 
 function markAsRead(contactId) {
-  console.log('=== MARKING AS READ ===');
-  console.log('Contact ID:', contactId);
-  
   const contact = adminDashboard.data.contacts.find(c => c.id === contactId);
   if (contact) {
-    console.log('Found contact:', contact);
     contact.read = true;
     
     // Update in Firebase
     window.db.collection('public').doc('portfolio').collection('contacts').doc(contactId).update({
       read: true
     }).then(() => {
-      console.log('Contact marked as read in Firebase');
       adminDashboard.renderData('contacts');
       adminDashboard.updateContactCount();
       adminDashboard.showNotification('Contact marked as read!', 'success');
@@ -1756,25 +1582,19 @@ function markAsRead(contactId) {
       adminDashboard.showNotification('Error marking as read: ' + error.message, 'error');
     });
   } else {
-    console.error('Contact not found with ID:', contactId);
     adminDashboard.showNotification('Contact not found!', 'error');
   }
 }
 
 function markAsUnread(contactId) {
-  console.log('=== MARKING AS UNREAD ===');
-  console.log('Contact ID:', contactId);
-  
   const contact = adminDashboard.data.contacts.find(c => c.id === contactId);
   if (contact) {
-    console.log('Found contact:', contact);
     contact.read = false;
     
     // Update in Firebase
     window.db.collection('public').doc('portfolio').collection('contacts').doc(contactId).update({
       read: false
     }).then(() => {
-      console.log('Contact marked as unread in Firebase');
       adminDashboard.renderData('contacts');
       adminDashboard.updateContactCount();
       adminDashboard.showNotification('Contact marked as unread!', 'success');
@@ -1783,7 +1603,6 @@ function markAsUnread(contactId) {
       adminDashboard.showNotification('Error marking as unread: ' + error.message, 'error');
     });
   } else {
-    console.error('Contact not found with ID:', contactId);
     adminDashboard.showNotification('Contact not found!', 'error');
   }
 }
@@ -1981,96 +1800,8 @@ function filterTasks() {
 
 // Global delete function
 function deleteItem(type, id) {
-  console.log('Global deleteItem called with:', type, id);
   if (adminDashboard) {
     adminDashboard.deleteItem(type, id);
-  } else {
-    console.error('adminDashboard not available');
   }
 }
 
-// Test function to add a sample contact message
-async function addTestContact() {
-  try {
-    console.log('Adding test contact message...');
-    
-    const testMessage = {
-      name: 'Test User',
-      email: 'test@example.com',
-      message: 'This is a test message to verify the contact system is working.',
-      timestamp: new Date().toISOString(),
-      read: false
-    };
-    
-    // Add to Firebase
-    const docRef = await window.db.collection('public').doc('portfolio').collection('contacts').add(testMessage);
-    console.log('Test contact added with ID:', docRef.id);
-    
-    // Refresh the contacts data
-    await adminDashboard.refreshContactsData();
-    
-    adminDashboard.showNotification('Test contact added successfully!', 'success');
-  } catch (error) {
-    console.error('Error adding test contact:', error);
-    adminDashboard.showNotification('Error adding test contact: ' + error.message, 'error');
-  }
-}
-
-// Debug function to check current state
-function debugContacts() {
-  console.log('=== DEBUG CONTACTS ===');
-  console.log('adminDashboard exists:', !!adminDashboard);
-  if (adminDashboard) {
-    console.log('adminDashboard.data exists:', !!adminDashboard.data);
-    console.log('adminDashboard.data.contacts exists:', !!adminDashboard.data.contacts);
-    console.log('adminDashboard.data.contacts:', adminDashboard.data.contacts);
-    console.log('adminDashboard.data.contacts.length:', adminDashboard.data.contacts ? adminDashboard.data.contacts.length : 'N/A');
-    
-    // Check the container
-    const container = document.getElementById('contacts-list');
-    console.log('contacts-list container exists:', !!container);
-    if (container) {
-      console.log('Container innerHTML length:', container.innerHTML.length);
-      console.log('Container innerHTML:', container.innerHTML);
-    }
-  }
-}
-
-// Test delete function
-function testDeleteFirstContact() {
-  console.log('=== TEST DELETE FIRST CONTACT ===');
-  if (adminDashboard && adminDashboard.data.contacts && adminDashboard.data.contacts.length > 0) {
-    const firstContact = adminDashboard.data.contacts[0];
-    console.log('Deleting first contact:', firstContact);
-    adminDashboard.deleteItem('contacts', firstContact.id);
-  } else {
-    console.log('No contacts available to delete');
-  }
-}
-
-// Test badge update function
-function testBadgeUpdate() {
-  console.log('=== TESTING BADGE UPDATE ===');
-  if (adminDashboard) {
-    adminDashboard.updateContactCount();
-  }
-  
-  // Also test manually creating a badge
-  const messagesTabBtn = document.querySelector('[data-tab="contacts"]');
-  if (messagesTabBtn) {
-    // Remove existing badge
-    const existingBadge = messagesTabBtn.querySelector('.tab-badge');
-    if (existingBadge) {
-      existingBadge.remove();
-    }
-    
-    // Add a test badge
-    const badge = document.createElement('span');
-    badge.className = 'tab-badge';
-    badge.textContent = '5';
-    badge.style.display = 'flex';
-    badge.style.zIndex = '1000';
-    messagesTabBtn.appendChild(badge);
-    console.log('Added test badge');
-  }
-}
