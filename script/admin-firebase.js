@@ -1106,32 +1106,61 @@ class AdminDashboard {
   }
 
   async deleteItem(type, id) {
+    console.log('=== DELETING ITEM ===');
+    console.log('Type:', type, 'ID:', id);
+    
     if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
     
-    // Map type to correct data key
-    let dataKey;
-    if (type === 'project') {
-      dataKey = 'projects';
-    } else if (type === 'contacts') {
-      dataKey = 'contacts';
-    } else {
-      dataKey = type + 's';
+    try {
+      // Map type to correct data key
+      let dataKey;
+      if (type === 'project') {
+        dataKey = 'projects';
+      } else if (type === 'contacts') {
+        dataKey = 'contacts';
+      } else {
+        dataKey = type + 's';
+      }
+      
+      console.log('Using dataKey:', dataKey);
+      
+      // Ensure the array exists
+      if (!this.data[dataKey]) {
+        this.data[dataKey] = [];
+      }
+      
+      // Remove from local data
+      const originalLength = this.data[dataKey].length;
+      this.data[dataKey] = this.data[dataKey].filter(item => item.id !== id);
+      const newLength = this.data[dataKey].length;
+      
+      console.log('Items removed from local data:', originalLength - newLength);
+      
+      // For contacts, also delete from Firebase
+      if (type === 'contacts') {
+        console.log('Deleting contact from Firebase...');
+        await window.db.collection('public').doc('portfolio').collection('contacts').doc(id).delete();
+        console.log('Contact deleted from Firebase successfully');
+      }
+      
+      // Re-render the data
+      this.renderData(type);
+      
+      // Save data (for non-contact items)
+      if (type !== 'contacts') {
+        await this.saveData();
+      }
+      
+      if (dataKey === 'projects') {
+        await this.saveToPublicPortfolio();
+      }
+      
+      this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
+      
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      this.showNotification('Error deleting item: ' + error.message, 'error');
     }
-    
-    // Ensure the array exists
-    if (!this.data[dataKey]) {
-      this.data[dataKey] = [];
-    }
-    
-    this.data[dataKey] = this.data[dataKey].filter(item => item.id !== id);
-    this.renderData(type);
-    await this.saveData();
-    
-    if (dataKey === 'projects') {
-      await this.saveToPublicPortfolio();
-    }
-    
-    this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
   }
 
   setupPortfolioForms() {
@@ -1503,21 +1532,58 @@ async function resetProfileImage() {
 }
 
 function markAllRead() {
-  adminDashboard.data.contacts.forEach(contact => contact.read = true);
-  adminDashboard.renderData('contacts');
-  adminDashboard.saveData();
-  adminDashboard.updateContactCount();
-  adminDashboard.showNotification('All contacts marked as read!', 'success');
+  console.log('=== MARKING ALL AS READ ===');
+  
+  if (adminDashboard.data.contacts.length === 0) {
+    adminDashboard.showNotification('No contacts to mark as read!', 'info');
+    return;
+  }
+  
+  // Update all contacts in Firebase
+  const updatePromises = adminDashboard.data.contacts.map(contact => {
+    return window.db.collection('public').doc('portfolio').collection('contacts').doc(contact.id).update({
+      read: true
+    });
+  });
+  
+  Promise.all(updatePromises).then(() => {
+    console.log('All contacts marked as read in Firebase');
+    
+    // Update local data
+    adminDashboard.data.contacts.forEach(contact => contact.read = true);
+    adminDashboard.renderData('contacts');
+    adminDashboard.updateContactCount();
+    adminDashboard.showNotification('All contacts marked as read!', 'success');
+  }).catch(error => {
+    console.error('Error marking all contacts as read:', error);
+    adminDashboard.showNotification('Error marking all as read: ' + error.message, 'error');
+  });
 }
 
 function markAsRead(contactId) {
+  console.log('=== MARKING AS READ ===');
+  console.log('Contact ID:', contactId);
+  
   const contact = adminDashboard.data.contacts.find(c => c.id === contactId);
   if (contact) {
+    console.log('Found contact:', contact);
     contact.read = true;
-    adminDashboard.renderData('contacts');
-    adminDashboard.saveData();
-    adminDashboard.updateContactCount();
-    adminDashboard.showNotification('Contact marked as read!', 'success');
+    
+    // Update in Firebase
+    window.db.collection('public').doc('portfolio').collection('contacts').doc(contactId).update({
+      read: true
+    }).then(() => {
+      console.log('Contact marked as read in Firebase');
+      adminDashboard.renderData('contacts');
+      adminDashboard.updateContactCount();
+      adminDashboard.showNotification('Contact marked as read!', 'success');
+    }).catch(error => {
+      console.error('Error updating contact in Firebase:', error);
+      adminDashboard.showNotification('Error marking as read: ' + error.message, 'error');
+    });
+  } else {
+    console.error('Contact not found with ID:', contactId);
+    adminDashboard.showNotification('Contact not found!', 'error');
   }
 }
 
