@@ -231,10 +231,19 @@
         <div id="contacts" class="tab">
           <div class="tab-header">
             <h2><i class="fas fa-envelope"></i> Messages</h2>
-            <button onclick="markAllRead()" class="btn-secondary">
-              <i class="fas fa-check-double"></i>
-              Mark All Read
-            </button>
+            <div class="tab-actions">
+              <button
+                onclick="adminDashboard.refreshContactsData()"
+                class="btn-secondary"
+              >
+                <i class="fas fa-sync-alt"></i>
+                Refresh
+              </button>
+              <button onclick="markAllRead()" class="btn-secondary">
+                <i class="fas fa-check-double"></i>
+                Mark All Read
+              </button>
+            </div>
           </div>
           <div id="contacts-list"></div>
         </div>

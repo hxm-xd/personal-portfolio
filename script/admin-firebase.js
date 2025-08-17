@@ -20,6 +20,7 @@ class AdminDashboard {
     
     this.setupEvents();
     await this.checkAuth();
+    this.setupRealtimeListeners();
     this.showNotification('Welcome to Admin Dashboard!', 'success');
   }
 
@@ -31,9 +32,9 @@ class AdminDashboard {
   setupEvents() {
     // Tab navigation
     document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        this.switchTab(e.target.closest('.nav-btn').getAttribute('data-tab'));
+        await this.switchTab(e.target.closest('.nav-btn').getAttribute('data-tab'));
       });
     });
 
@@ -74,6 +75,59 @@ class AdminDashboard {
       this.updateNetworkStatus();
       this.showNotification('You are now offline. Some features may be limited.', 'warning');
     });
+  }
+
+  setupRealtimeListeners() {
+    // Listen for new contact messages in real-time
+    if (typeof window.db !== 'undefined') {
+      const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
+      
+      contactsRef.onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            // New message received
+            console.log('New contact message received:', change.doc.data());
+            this.showNotification('New message received!', 'info');
+            
+            // Refresh contacts if currently on contacts tab
+            if (this.currentTab === 'contacts') {
+              this.refreshContactsData();
+            }
+            
+            // Update contact count in overview
+            this.updateContactCount();
+          }
+        });
+      }, (error) => {
+        console.error('Error setting up real-time listener:', error);
+      });
+    }
+  }
+
+  updateContactCount() {
+    const contactCount = this.data.contacts.filter(contact => !contact.read).length;
+    const contactCountElement = document.getElementById('contact-count');
+    if (contactCountElement) {
+      contactCountElement.textContent = contactCount;
+    }
+    
+    // Update the Messages tab button with badge
+    const messagesTabBtn = document.querySelector('[data-tab="contacts"]');
+    if (messagesTabBtn) {
+      // Remove existing badge
+      const existingBadge = messagesTabBtn.querySelector('.tab-badge');
+      if (existingBadge) {
+        existingBadge.remove();
+      }
+      
+      // Add new badge if there are unread messages
+      if (contactCount > 0) {
+        const badge = document.createElement('span');
+        badge.className = 'tab-badge';
+        badge.textContent = contactCount;
+        messagesTabBtn.appendChild(badge);
+      }
+    }
   }
 
   updateNetworkStatus() {
@@ -213,26 +267,59 @@ class AdminDashboard {
 
       console.log('Loaded contacts:', this.data.contacts);
       console.log('Contacts array length:', this.data.contacts.length);
-      
-      // Add a test contact if none exist (for debugging)
-      if (this.data.contacts.length === 0) {
-        console.log('No contacts found, adding test contact...');
-        this.data.contacts.push({
-          id: 'test-contact-1',
-          name: 'Test User',
-          email: 'test@example.com',
-          message: 'This is a test message to verify the contact display is working.',
-          timestamp: new Date().toISOString(),
-          read: false
-        });
-        console.log('Test contact added:', this.data.contacts);
-      }
 
       this.renderAllData();
       this.loadPortfolioSettings();
+      this.updateContactCount();
     } catch (error) {
       console.error('Error loading data:', error);
       this.showNotification('Error loading data: ' + error.message, 'error');
+    }
+  }
+
+  async refreshContactsData() {
+    try {
+      console.log('Refreshing contacts data...');
+      
+      // Show loading state on refresh button
+      const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
+      const originalText = refreshBtn.innerHTML;
+      refreshBtn.disabled = true;
+      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      
+      // Load fresh contacts data from Firebase
+      const contacts = await this.loadCollection('contacts');
+      this.data.contacts = contacts;
+      
+      console.log('Refreshed contacts:', this.data.contacts);
+      console.log('Contacts array length:', this.data.contacts.length);
+      
+      // Render the contacts immediately
+      this.renderData('contacts');
+      
+      // Update the contact count in overview
+      const contactCount = this.data.contacts.filter(contact => !contact.read).length;
+      const contactCountElement = document.getElementById('contact-count');
+      if (contactCountElement) {
+        contactCountElement.textContent = contactCount;
+      }
+      
+      console.log('Contacts refreshed successfully');
+      this.showNotification('Messages refreshed successfully!', 'success');
+      
+      // Reset refresh button
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = originalText;
+    } catch (error) {
+      console.error('Error refreshing contacts:', error);
+      this.showNotification('Error refreshing contacts: ' + error.message, 'error');
+      
+      // Reset refresh button on error
+      const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+      }
     }
   }
 
@@ -315,7 +402,7 @@ class AdminDashboard {
     }
   }
 
-  switchTab(tab) {
+  async switchTab(tab) {
     console.log('Switching to tab:', tab);
     this.currentTab = tab;
     
@@ -329,8 +416,11 @@ class AdminDashboard {
     
     // Load specific data
     if (tab === 'overview') {
-      this.loadOverviewData();
-    } else if (['tasks', 'academics', 'contacts'].includes(tab)) {
+      await this.loadOverviewData();
+    } else if (tab === 'contacts') {
+      // Refresh contacts data when opening messages tab
+      await this.refreshContactsData();
+    } else if (['tasks', 'academics'].includes(tab)) {
       this.renderData(tab);
     } else if (tab === 'portfolio') {
       console.log('Rendering projects for portfolio tab');
@@ -441,7 +531,10 @@ class AdminDashboard {
     ['tasks', 'academics', 'contacts', 'projects'].forEach(type => this.renderData(type));
   }
 
-  loadOverviewData() {
+  async loadOverviewData() {
+    // Refresh contacts data to get the latest count
+    await this.refreshContactsData();
+    
     // Update statistics
     const taskCount = this.data.tasks.filter(task => task.status !== 'completed').length;
     const contactCount = this.data.contacts.filter(contact => !contact.read).length;
@@ -1241,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Global functions for HTML onclick handlers
-function switchTab(tab) { adminDashboard.switchTab(tab); }
+async function switchTab(tab) { await adminDashboard.switchTab(tab); }
 function logout() { adminDashboard.logout(); }
 function openModal(type) { 
   console.log('Global openModal called with type:', type);
@@ -1267,6 +1360,7 @@ function markAllRead() {
   adminDashboard.data.contacts.forEach(contact => contact.read = true);
   adminDashboard.renderData('contacts');
   adminDashboard.saveData();
+  adminDashboard.updateContactCount();
   adminDashboard.showNotification('All contacts marked as read!', 'success');
 }
 
@@ -1276,6 +1370,7 @@ function markAsRead(contactId) {
     contact.read = true;
     adminDashboard.renderData('contacts');
     adminDashboard.saveData();
+    adminDashboard.updateContactCount();
     adminDashboard.showNotification('Contact marked as read!', 'success');
   }
 }
