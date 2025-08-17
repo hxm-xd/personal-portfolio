@@ -2402,6 +2402,7 @@ body {
   gap: 0.5rem;
   position: relative;
   overflow: hidden;
+  color: white !important;
 }
 
 .item-actions button::before {
@@ -2421,7 +2422,7 @@ body {
 
 .item-actions .btn-secondary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
+  color: white !important;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
@@ -2432,7 +2433,7 @@ body {
 
 .item-actions .btn-danger {
   background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
-  color: white;
+  color: white !important;
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 

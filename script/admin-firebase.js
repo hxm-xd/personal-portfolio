@@ -80,32 +80,22 @@ class AdminDashboard {
   setupRealtimeListeners() {
     // Listen for new contact messages in real-time
     if (typeof window.db !== 'undefined') {
-      console.log('Setting up real-time listeners...');
       const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
       
       contactsRef.onSnapshot((snapshot) => {
-        console.log('Real-time update received:', snapshot.docChanges().length, 'changes');
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             // New message received
-            console.log('New contact message received:', change.doc.data());
             this.showNotification('New message received!', 'info');
             
-            // Refresh contacts if currently on contacts tab
-            if (this.currentTab === 'contacts') {
-              this.refreshContactsData();
-            }
-            
-            // Update contact count in overview
+            // Always refresh contacts data and update count
+            this.refreshContactsData();
             this.updateContactCount();
           }
         });
       }, (error) => {
         console.error('Error setting up real-time listener:', error);
-        console.error('This might be due to Firebase security rules');
       });
-    } else {
-      console.log('Firebase not available for real-time listeners');
     }
   }
 
@@ -412,7 +402,6 @@ class AdminDashboard {
   }
 
   async switchTab(tab) {
-    console.log('Switching to tab:', tab);
     this.currentTab = tab;
     
     // Update navigation
@@ -420,8 +409,8 @@ class AdminDashboard {
     document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
     
     // Show/hide tabs
-    document.querySelectorAll('.tab').forEach(t => t.style.display = 'none');
-    document.getElementById(tab).style.display = 'block';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
     
     // Load specific data
     if (tab === 'overview') {
@@ -432,7 +421,6 @@ class AdminDashboard {
     } else if (['tasks', 'academics'].includes(tab)) {
       this.renderData(tab);
     } else if (tab === 'portfolio') {
-      console.log('Rendering projects for portfolio tab');
       this.renderData('projects');
     } else if (tab === 'portfolio-settings') {
       setTimeout(() => {
@@ -542,24 +530,19 @@ class AdminDashboard {
           <div class="item-actions">
             <button onclick="editItem('${type}', '${item.id}')" class="btn-secondary">
               <i class="fas fa-edit"></i>
+              Edit
             </button>
             <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger">
               <i class="fas fa-trash"></i>
+              Delete
             </button>
           </div>
         </div>
       `;
     });
     
-    console.log('Generated HTML array length:', html.length);
-    console.log('First HTML item:', html[0]);
-    
     const finalHtml = html.join('');
-    console.log('Final HTML length:', finalHtml.length);
-    console.log('Setting container.innerHTML...');
-    
     container.innerHTML = finalHtml;
-    console.log('Container innerHTML set successfully');
   }
 
   renderAllData() {
