@@ -352,6 +352,15 @@ class AdminDashboard {
       console.log('Updated data.contacts:', this.data.contacts);
       console.log('Contacts array length:', this.data.contacts.length);
       
+      // Test: Check if data is actually there
+      console.log('=== DATA VERIFICATION ===');
+      console.log('this.data.contacts exists:', !!this.data.contacts);
+      console.log('this.data.contacts is array:', Array.isArray(this.data.contacts));
+      console.log('this.data.contacts.length:', this.data.contacts.length);
+      if (this.data.contacts.length > 0) {
+        console.log('First contact:', this.data.contacts[0]);
+      }
+      
       // Render the contacts immediately
       console.log('Rendering contacts data...');
       this.renderData('contacts');
@@ -555,6 +564,8 @@ class AdminDashboard {
     const items = this.data[dataKey];
     console.log('Items to render:', items);
     console.log('Items length:', items.length);
+    console.log('Data key being used:', dataKey);
+    console.log('Actual data in this.data[dataKey]:', this.data[dataKey]);
     
     if (items.length === 0) {
       console.log('No items to render, showing empty state');
@@ -568,13 +579,15 @@ class AdminDashboard {
       return;
     }
 
-    container.innerHTML = items.map(item => {
+    console.log('About to generate HTML for', items.length, 'items');
+    const html = items.map(item => {
       const statusClass = item.status ? `status-${item.status}` : '';
       const statusText = item.status ? item.status.replace('-', ' ') : '';
       const readClass = item.read ? 'read' : 'unread';
       
       // Special handling for contacts
       if (type === 'contacts') {
+        console.log('Generating HTML for contact:', item);
         return `
           <div class="item-card ${readClass}">
             <div class="item-content">
@@ -619,7 +632,17 @@ class AdminDashboard {
           </div>
         </div>
       `;
-    }).join('');
+    });
+    
+    console.log('Generated HTML array length:', html.length);
+    console.log('First HTML item:', html[0]);
+    
+    const finalHtml = html.join('');
+    console.log('Final HTML length:', finalHtml.length);
+    console.log('Setting container.innerHTML...');
+    
+    container.innerHTML = finalHtml;
+    console.log('Container innerHTML set successfully');
   }
 
   renderAllData() {
@@ -1713,5 +1736,25 @@ async function addTestContact() {
   } catch (error) {
     console.error('Error adding test contact:', error);
     adminDashboard.showNotification('Error adding test contact: ' + error.message, 'error');
+  }
+}
+
+// Debug function to check current state
+function debugContacts() {
+  console.log('=== DEBUG CONTACTS ===');
+  console.log('adminDashboard exists:', !!adminDashboard);
+  if (adminDashboard) {
+    console.log('adminDashboard.data exists:', !!adminDashboard.data);
+    console.log('adminDashboard.data.contacts exists:', !!adminDashboard.data.contacts);
+    console.log('adminDashboard.data.contacts:', adminDashboard.data.contacts);
+    console.log('adminDashboard.data.contacts.length:', adminDashboard.data.contacts ? adminDashboard.data.contacts.length : 'N/A');
+    
+    // Check the container
+    const container = document.getElementById('contacts-list');
+    console.log('contacts-list container exists:', !!container);
+    if (container) {
+      console.log('Container innerHTML length:', container.innerHTML.length);
+      console.log('Container innerHTML:', container.innerHTML);
+    }
   }
 }
