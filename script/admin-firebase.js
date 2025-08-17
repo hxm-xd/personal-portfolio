@@ -605,7 +605,7 @@ class AdminDashboard {
               <button onclick="markAsRead('${item.id}')" class="btn-secondary" title="Mark as read">
                 <i class="fas fa-check"></i>
               </button>
-              <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger">
+              <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger" title="Delete ${type}">
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -1108,8 +1108,12 @@ class AdminDashboard {
   async deleteItem(type, id) {
     console.log('=== DELETING ITEM ===');
     console.log('Type:', type, 'ID:', id);
+    console.log('this.data before deletion:', this.data);
     
-    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+    if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) {
+      console.log('User cancelled deletion');
+      return;
+    }
     
     try {
       // Map type to correct data key
@@ -1123,10 +1127,21 @@ class AdminDashboard {
       }
       
       console.log('Using dataKey:', dataKey);
+      console.log('Data before deletion:', this.data[dataKey]);
       
       // Ensure the array exists
       if (!this.data[dataKey]) {
         this.data[dataKey] = [];
+      }
+      
+      // Find the item to delete
+      const itemToDelete = this.data[dataKey].find(item => item.id === id);
+      console.log('Item to delete:', itemToDelete);
+      
+      if (!itemToDelete) {
+        console.error('Item not found with ID:', id);
+        this.showNotification('Item not found!', 'error');
+        return;
       }
       
       // Remove from local data
@@ -1135,15 +1150,17 @@ class AdminDashboard {
       const newLength = this.data[dataKey].length;
       
       console.log('Items removed from local data:', originalLength - newLength);
+      console.log('Data after local deletion:', this.data[dataKey]);
       
       // For contacts, also delete from Firebase
       if (type === 'contacts') {
         console.log('Deleting contact from Firebase...');
-        await window.db.collection('public').doc('portfolio').collection('contacts').doc(id).delete();
-        console.log('Contact deleted from Firebase successfully');
+        const deleteResult = await window.db.collection('public').doc('portfolio').collection('contacts').doc(id).delete();
+        console.log('Contact deleted from Firebase successfully:', deleteResult);
       }
       
       // Re-render the data
+      console.log('Re-rendering data...');
       this.renderData(type);
       
       // Save data (for non-contact items)
@@ -1155,10 +1172,12 @@ class AdminDashboard {
         await this.saveToPublicPortfolio();
       }
       
+      console.log('Deletion completed successfully');
       this.showNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`, 'success');
       
     } catch (error) {
       console.error('Error deleting item:', error);
+      console.error('Error stack:', error.stack);
       this.showNotification('Error deleting item: ' + error.message, 'error');
     }
   }
@@ -1778,6 +1797,16 @@ function filterTasks() {
   }
 }
 
+// Global delete function
+function deleteItem(type, id) {
+  console.log('Global deleteItem called with:', type, id);
+  if (adminDashboard) {
+    adminDashboard.deleteItem(type, id);
+  } else {
+    console.error('adminDashboard not available');
+  }
+}
+
 // Test function to add a sample contact message
 async function addTestContact() {
   try {
@@ -1822,5 +1851,17 @@ function debugContacts() {
       console.log('Container innerHTML length:', container.innerHTML.length);
       console.log('Container innerHTML:', container.innerHTML);
     }
+  }
+}
+
+// Test delete function
+function testDeleteFirstContact() {
+  console.log('=== TEST DELETE FIRST CONTACT ===');
+  if (adminDashboard && adminDashboard.data.contacts && adminDashboard.data.contacts.length > 0) {
+    const firstContact = adminDashboard.data.contacts[0];
+    console.log('Deleting first contact:', firstContact);
+    adminDashboard.deleteItem('contacts', firstContact.id);
+  } else {
+    console.log('No contacts available to delete');
   }
 }
