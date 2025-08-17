@@ -656,9 +656,15 @@ class AdminDashboard {
             <div class="item-actions">
               <button onclick="markAsRead('${item.id}')" class="btn-secondary" title="Mark as read">
                 <i class="fas fa-check"></i>
+                Mark as Read
+              </button>
+              <button onclick="markAsUnread('${item.id}')" class="btn-secondary" title="Mark as unread">
+                <i class="fas fa-eye-slash"></i>
+                Mark as Unread
               </button>
               <button onclick="deleteItem('${type}', '${item.id}')" class="btn-danger" title="Delete ${type}">
                 <i class="fas fa-trash"></i>
+                Delete
               </button>
             </div>
           </div>
@@ -1553,21 +1559,84 @@ class AdminDashboard {
   }
 
   showNotification(message, type = 'info') {
+    // Create notification container if it doesn't exist
+    let notificationContainer = document.getElementById('notification-container');
+    if (!notificationContainer) {
+      notificationContainer = document.createElement('div');
+      notificationContainer.id = 'notification-container';
+      notificationContainer.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 3000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+      `;
+      document.body.appendChild(notificationContainer);
+    }
+    
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      border-left: 4px solid var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: slideInRight 0.3s ease;
+      max-width: 400px;
+      word-wrap: break-word;
+    `;
+    
+    // Set border color based on type
+    const borderColors = {
+      success: 'var(--success)',
+      error: 'var(--danger)',
+      warning: 'var(--warning)',
+      info: 'var(--info)'
+    };
+    notification.style.borderLeftColor = borderColors[type] || 'var(--primary)';
+    
+    const iconType = type === 'success' ? 'check-circle' : 
+                    type === 'error' ? 'exclamation-circle' : 
+                    type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    
     notification.innerHTML = `
-      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-      <span>${message}</span>
-      <button onclick="this.parentElement.remove()">
+      <i class="fas fa-${iconType}" style="font-size: 1.25rem; color: ${borderColors[type] || 'var(--primary)'};"></i>
+      <span style="flex: 1;">${message}</span>
+      <button onclick="this.parentElement.remove()" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; border-radius: var(--radius); transition: var(--transition); margin-left: auto;">
         <i class="fas fa-times"></i>
       </button>
     `;
     
-    document.body.appendChild(notification);
+    // Add hover effect to close button
+    const closeBtn = notification.querySelector('button');
+    closeBtn.addEventListener('mouseenter', () => {
+      closeBtn.style.background = 'rgba(0, 0, 0, 0.1)';
+      closeBtn.style.color = 'var(--text-primary)';
+    });
+    closeBtn.addEventListener('mouseleave', () => {
+      closeBtn.style.background = 'none';
+      closeBtn.style.color = 'var(--text-secondary)';
+    });
     
+    notificationContainer.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
     setTimeout(() => {
       if (notification.parentElement) {
-        notification.remove();
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 300);
       }
     }, 5000);
   }
@@ -1636,6 +1705,35 @@ function markAllRead() {
   });
 }
 
+function markAllUnread() {
+  console.log('=== MARKING ALL AS UNREAD ===');
+  
+  if (adminDashboard.data.contacts.length === 0) {
+    adminDashboard.showNotification('No contacts to mark as unread!', 'info');
+    return;
+  }
+  
+  // Update all contacts in Firebase
+  const updatePromises = adminDashboard.data.contacts.map(contact => {
+    return window.db.collection('public').doc('portfolio').collection('contacts').doc(contact.id).update({
+      read: false
+    });
+  });
+  
+  Promise.all(updatePromises).then(() => {
+    console.log('All contacts marked as unread in Firebase');
+    
+    // Update local data
+    adminDashboard.data.contacts.forEach(contact => contact.read = false);
+    adminDashboard.renderData('contacts');
+    adminDashboard.updateContactCount();
+    adminDashboard.showNotification('All contacts marked as unread!', 'success');
+  }).catch(error => {
+    console.error('Error marking all contacts as unread:', error);
+    adminDashboard.showNotification('Error marking all as unread: ' + error.message, 'error');
+  });
+}
+
 function markAsRead(contactId) {
   console.log('=== MARKING AS READ ===');
   console.log('Contact ID:', contactId);
@@ -1656,6 +1754,33 @@ function markAsRead(contactId) {
     }).catch(error => {
       console.error('Error updating contact in Firebase:', error);
       adminDashboard.showNotification('Error marking as read: ' + error.message, 'error');
+    });
+  } else {
+    console.error('Contact not found with ID:', contactId);
+    adminDashboard.showNotification('Contact not found!', 'error');
+  }
+}
+
+function markAsUnread(contactId) {
+  console.log('=== MARKING AS UNREAD ===');
+  console.log('Contact ID:', contactId);
+  
+  const contact = adminDashboard.data.contacts.find(c => c.id === contactId);
+  if (contact) {
+    console.log('Found contact:', contact);
+    contact.read = false;
+    
+    // Update in Firebase
+    window.db.collection('public').doc('portfolio').collection('contacts').doc(contactId).update({
+      read: false
+    }).then(() => {
+      console.log('Contact marked as unread in Firebase');
+      adminDashboard.renderData('contacts');
+      adminDashboard.updateContactCount();
+      adminDashboard.showNotification('Contact marked as unread!', 'success');
+    }).catch(error => {
+      console.error('Error updating contact in Firebase:', error);
+      adminDashboard.showNotification('Error marking as unread: ' + error.message, 'error');
     });
   } else {
     console.error('Contact not found with ID:', contactId);
