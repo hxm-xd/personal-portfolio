@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ccc;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+      }
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
+      .info {
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Firebase Connection Test</h1>
+
+    <div class="test-section">
+      <h2>Test 1: Firebase Connection</h2>
+      <button onclick="testFirebaseConnection()">Test Connection</button>
+      <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 2: Add Test Contact</h2>
+      <button onclick="addTestContact()">Add Test Contact</button>
+      <div id="add-result"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>Test 3: Load Contacts</h2>
+      <button onclick="loadContacts()">Load Contacts</button>
+      <div id="load-result"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+      function log(message, type = "info") {
+        console.log(message);
+        const div = document.createElement("div");
+        div.className = type;
+        div.textContent = message;
+        return div;
+      }
+
+      async function testFirebaseConnection() {
+        const resultDiv = document.getElementById("connection-result");
+        resultDiv.innerHTML = "";
+
+        try {
+          resultDiv.appendChild(log("Testing Firebase connection...", "info"));
+
+          if (typeof window.db === "undefined") {
+            resultDiv.appendChild(log("Firebase not initialized!", "error"));
+            return;
+          }
+
+          resultDiv.appendChild(log("Firebase db object found", "success"));
+
+          // Test a simple query
+          const testDoc = await window.db
+            .collection("public")
+            .doc("portfolio")
+            .get();
+          resultDiv.appendChild(
+            log("Successfully connected to Firebase!", "success")
+          );
+          resultDiv.appendChild(
+            log(`Portfolio document exists: ${testDoc.exists}`, "info")
+          );
+        } catch (error) {
+          resultDiv.appendChild(
+            log(`Connection failed: ${error.message}`, "error")
+          );
+          console.error("Connection test error:", error);
+        }
+      }
+
+      async function addTestContact() {
+        const resultDiv = document.getElementById("add-result");
+        resultDiv.innerHTML = "";
+
+        try {
+          resultDiv.appendChild(log("Adding test contact...", "info"));
+
+          const testMessage = {
+            name: "Test User",
+            email: "test@example.com",
+            message: "This is a test message from the test page.",
+            timestamp: new Date().toISOString(),
+            read: false,
+          };
+
+          const docRef = await window.db
+            .collection("public")
+            .doc("portfolio")
+            .collection("contacts")
+            .add(testMessage);
+          resultDiv.appendChild(
+            log(
+              `Test contact added successfully with ID: ${docRef.id}`,
+              "success"
+            )
+          );
+        } catch (error) {
+          resultDiv.appendChild(
+            log(`Failed to add test contact: ${error.message}`, "error")
+          );
+          console.error("Add test contact error:", error);
+        }
+      }
+
+      async function loadContacts() {
+        const resultDiv = document.getElementById("load-result");
+        resultDiv.innerHTML = "";
+
+        try {
+          resultDiv.appendChild(log("Loading contacts...", "info"));
+
+          const snapshot = await window.db
+            .collection("public")
+            .doc("portfolio")
+            .collection("contacts")
+            .get();
+          const contacts = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          resultDiv.appendChild(
+            log(`Found ${contacts.length} contacts`, "success")
+          );
+
+          contacts.forEach((contact, index) => {
+            resultDiv.appendChild(
+              log(
+                `Contact ${index + 1}: ${contact.name} (${contact.email})`,
+                "info"
+              )
+            );
+          });
+        } catch (error) {
+          resultDiv.appendChild(
+            log(`Failed to load contacts: ${error.message}`, "error")
+          );
+          console.error("Load contacts error:", error);
+        }
+      }
+
+      // Wait for Firebase to be ready
+      window.addEventListener("firebaseReady", () => {
+        console.log("Firebase is ready for testing");
+      });
+    </script>
+  </body>
+</html>

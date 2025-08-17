@@ -80,9 +80,11 @@ class AdminDashboard {
   setupRealtimeListeners() {
     // Listen for new contact messages in real-time
     if (typeof window.db !== 'undefined') {
+      console.log('Setting up real-time listeners...');
       const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
       
       contactsRef.onSnapshot((snapshot) => {
+        console.log('Real-time update received:', snapshot.docChanges().length, 'changes');
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             // New message received
@@ -100,7 +102,56 @@ class AdminDashboard {
         });
       }, (error) => {
         console.error('Error setting up real-time listener:', error);
+        console.error('This might be due to Firebase security rules');
       });
+    } else {
+      console.log('Firebase not available for real-time listeners');
+    }
+  }
+
+  // Diagnostic function to check Firebase connection and permissions
+  async runDiagnostics() {
+    console.log('=== RUNNING FIREBASE DIAGNOSTICS ===');
+    
+    try {
+      // Check if Firebase is available
+      if (typeof window.db === 'undefined') {
+        console.error('Firebase db is not available');
+        this.showNotification('Firebase not initialized', 'error');
+        return;
+      }
+      
+      console.log('Firebase db is available');
+      
+      // Test basic connection
+      const testDoc = await window.db.collection('public').doc('portfolio').get();
+      console.log('Portfolio document exists:', testDoc.exists);
+      
+      // Test contacts collection access
+      const contactsSnapshot = await window.db.collection('public').doc('portfolio').collection('contacts').get();
+      console.log('Contacts collection accessible, found', contactsSnapshot.docs.length, 'documents');
+      
+      // Test adding a document
+      const testContact = {
+        name: 'Diagnostic Test',
+        email: 'test@diagnostic.com',
+        message: 'This is a diagnostic test message',
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+      
+      const docRef = await window.db.collection('public').doc('portfolio').collection('contacts').add(testContact);
+      console.log('Successfully added test contact with ID:', docRef.id);
+      
+      // Clean up - delete the test document
+      await docRef.delete();
+      console.log('Test contact cleaned up');
+      
+      this.showNotification('Firebase diagnostics completed successfully', 'success');
+      
+    } catch (error) {
+      console.error('Firebase diagnostics failed:', error);
+      this.showNotification('Firebase diagnostics failed: ' + error.message, 'error');
     }
   }
 
@@ -279,26 +330,35 @@ class AdminDashboard {
 
   async refreshContactsData() {
     try {
-      console.log('Refreshing contacts data...');
+      console.log('=== REFRESHING CONTACTS DATA ===');
+      console.log('Current user:', this.user);
+      console.log('Firebase db available:', typeof window.db !== 'undefined');
       
       // Show loading state on refresh button
       const refreshBtn = document.querySelector('#contacts .tab-actions button:first-child');
-      const originalText = refreshBtn.innerHTML;
-      refreshBtn.disabled = true;
-      refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      const originalText = refreshBtn ? refreshBtn.innerHTML : '';
+      if (refreshBtn) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+      }
       
       // Load fresh contacts data from Firebase
+      console.log('Calling loadCollection for contacts...');
       const contacts = await this.loadCollection('contacts');
+      console.log('Raw contacts from Firebase:', contacts);
+      
       this.data.contacts = contacts;
       
-      console.log('Refreshed contacts:', this.data.contacts);
+      console.log('Updated data.contacts:', this.data.contacts);
       console.log('Contacts array length:', this.data.contacts.length);
       
       // Render the contacts immediately
+      console.log('Rendering contacts data...');
       this.renderData('contacts');
       
       // Update the contact count in overview
       const contactCount = this.data.contacts.filter(contact => !contact.read).length;
+      console.log('Unread contact count:', contactCount);
       const contactCountElement = document.getElementById('contact-count');
       if (contactCountElement) {
         contactCountElement.textContent = contactCount;
@@ -308,10 +368,13 @@ class AdminDashboard {
       this.showNotification('Messages refreshed successfully!', 'success');
       
       // Reset refresh button
-      refreshBtn.disabled = false;
-      refreshBtn.innerHTML = originalText;
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalText;
+      }
     } catch (error) {
       console.error('Error refreshing contacts:', error);
+      console.error('Error stack:', error.stack);
       this.showNotification('Error refreshing contacts: ' + error.message, 'error');
       
       // Reset refresh button on error
@@ -324,18 +387,39 @@ class AdminDashboard {
   }
 
   async loadCollection(collectionName, maxRetries = 3) {
+    console.log(`=== LOADING COLLECTION: ${collectionName} ===`);
+    console.log('Max retries:', maxRetries);
+    console.log('Firebase db available:', typeof window.db !== 'undefined');
+    
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
+        console.log(`Attempt ${attempt}/${maxRetries} for ${collectionName}`);
+        
         // Load contacts from public collection, others from user's private collection
         if (collectionName === 'contacts') {
-          const snapshot = await window.db.collection('public').doc('portfolio').collection('contacts').get();
-          return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('Loading contacts from public collection...');
+          const contactsRef = window.db.collection('public').doc('portfolio').collection('contacts');
+          console.log('Contacts reference:', contactsRef);
+          
+          const snapshot = await contactsRef.get();
+          console.log('Contacts snapshot:', snapshot);
+          console.log('Number of contacts found:', snapshot.docs.length);
+          
+          const contacts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log('Processed contacts:', contacts);
+          return contacts;
         } else {
+          console.log(`Loading ${collectionName} from user's private collection...`);
           const snapshot = await window.db.collection('users').doc(this.user.uid).collection(collectionName).get();
           return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         }
       } catch (error) {
-        if (attempt === maxRetries) return [];
+        console.error(`Error on attempt ${attempt} for ${collectionName}:`, error);
+        if (attempt === maxRetries) {
+          console.error(`All ${maxRetries} attempts failed for ${collectionName}`);
+          return [];
+        }
+        console.log(`Waiting ${1000 * attempt}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
@@ -434,6 +518,8 @@ class AdminDashboard {
   }
 
   renderData(type) {
+    console.log(`=== RENDERING DATA FOR: ${type} ===`);
+    
     // Map type to correct data key
     const dataKey = type === 'project' ? 'projects' : type + 's';
     
@@ -461,8 +547,10 @@ class AdminDashboard {
 
     const items = this.data[dataKey];
     console.log('Items to render:', items);
+    console.log('Items length:', items.length);
     
     if (items.length === 0) {
+      console.log('No items to render, showing empty state');
       container.innerHTML = `
         <div class="empty-state">
           <i class="fas fa-${type === 'tasks' ? 'tasks' : type === 'academics' ? 'graduation-cap' : type === 'contacts' ? 'envelope' : 'briefcase'}"></i>
@@ -1563,5 +1651,32 @@ function searchTasks() {
 function filterTasks() {
   if (adminDashboard) {
     adminDashboard.filterTasks();
+  }
+}
+
+// Test function to add a sample contact message
+async function addTestContact() {
+  try {
+    console.log('Adding test contact message...');
+    
+    const testMessage = {
+      name: 'Test User',
+      email: 'test@example.com',
+      message: 'This is a test message to verify the contact system is working.',
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+    
+    // Add to Firebase
+    const docRef = await window.db.collection('public').doc('portfolio').collection('contacts').add(testMessage);
+    console.log('Test contact added with ID:', docRef.id);
+    
+    // Refresh the contacts data
+    await adminDashboard.refreshContactsData();
+    
+    adminDashboard.showNotification('Test contact added successfully!', 'success');
+  } catch (error) {
+    console.error('Error adding test contact:', error);
+    adminDashboard.showNotification('Error adding test contact: ' + error.message, 'error');
   }
 }

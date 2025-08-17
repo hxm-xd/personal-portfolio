@@ -256,6 +256,8 @@ function setupProfileImage() {
 async function sendMessage(event) {
   event.preventDefault();
   
+  console.log('=== SENDING CONTACT MESSAGE ===');
+  
   const form = event.target;
   const formData = new FormData(form);
   const message = {
@@ -266,9 +268,14 @@ async function sendMessage(event) {
     read: false
   };
 
+  console.log('Message to send:', message);
+  console.log('Firebase db available:', typeof window.db !== 'undefined');
+
   try {
     // Save to Firebase
-    await window.db.collection('public').doc('portfolio').collection('contacts').add(message);
+    console.log('Saving message to Firebase...');
+    const docRef = await window.db.collection('public').doc('portfolio').collection('contacts').add(message);
+    console.log('Message saved with ID:', docRef.id);
     
     // Show success notification
     showNotification('Message sent successfully! Thank you for reaching out.', 'success');
@@ -277,6 +284,7 @@ async function sendMessage(event) {
     form.reset();
   } catch (error) {
     console.error('Error sending message:', error);
+    console.error('Error stack:', error.stack);
     showNotification('Error sending message. Please try again.', 'error');
   }
 }
